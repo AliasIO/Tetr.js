@@ -1,0 +1,45 @@
+body {
+	background: #111;
+	font-family: Verdana, Arial, sans-serif;
+	font-size: 13px;
+}
+
+#container {
+	height: 600px;
+	left: 50%;
+	margin: -300px 0 0 -250px;
+	position: absolute;
+	top: 50%;
+	width: 500px;
+}
+
+#main {
+	background: #f8f8f8;
+	height: 600px;
+	position: absolute;
+	width: 300px;
+}
+
+#sidebar {
+	background: #eee;
+	height: 600px;
+	left: 300px;
+	position: absolute;
+	width: 200px;
+}
+
+.block {
+	background: #222;
+	border: 1px solid;
+	border-color: rgba(255, 255, 255, .2) rgba(0, 0, 0, .2) rgba(0, 0, 0, .2) rgba(255, 255, 255, .2);
+	position: absolute;
+	height: 28px;
+	width: 28px;
+}
+
+	.block.bda, .block.dbc, .block.dba { background: #dd0; } /* O */
+	.block.bbb, .block.ddd             { background: #d00; } /* I */
+	.block.bdd, .block.dbb, .block.ddb { background: #d0d; } /* L */
+	.block.dbd                         { background: #0d0; } /* S */
+	.block.bdb                         { background: #0dd; } /* Z */
+	.block.bbd, .block.dbb             { background: #ddd; } /* J */
