@@ -4,6 +4,7 @@
 		$: {},
 		grid: null,
 		shapes: [ 'rrr', 'drr', 'ddr', 'drd', 'rdr', 'dru', 'rdur' ],
+		delay: 1000,
 		tetrimino: null,
 		queue: [],
 
@@ -23,21 +24,13 @@
 
 			app.next();
 
-			_(_.range(200)).each(function(i) {
-				setTimeout(function() {
-					if ( Math.round(Math.random()) ) {
-						app.tetrimino.rotate(Math.round(Math.random()));
-					}
+			// Key bindings
+			KeyboardJS.on('right', function() { app.tetrimino .right().render(); });
+			KeyboardJS.on('left',  function() { app.tetrimino  .left().render(); });
+			KeyboardJS.on('down',  function() { app.tetrimino  .down().render(); });
+			KeyboardJS.on('up',    function() { app.tetrimino.rotate().render(); });
 
-					if ( Math.round(Math.random()) ) {
-						app.tetrimino.left();
-					} else {
-						app.tetrimino.right();
-					}
-
-					app.tetrimino.down().render();
-				}, 10 * i);
-			});
+			app.interval = setInterval(app.progress, app.delay);
 		},
 
 		/**
@@ -85,6 +78,10 @@
 					if ( y ) {
 						self.grid.trimmed.map(function(col, row, filled) {
 							if ( filled ) {
+								if ( !self.pos.y ) {
+									alert('end');
+								}
+
 								app.grid.fill(self.pos.x + col, self.pos.y + row);
 							}
 						});
@@ -126,8 +123,8 @@
 			/**
 			 *
 			 */
-			self.rotate = function(clockwise) {
-				console.log('rotate ' + ( clockwise ? '' : 'counter ' ) + 'clockwise');
+			self.rotate = function() {
+				console.log('rotate');
 
 				var
 					oldGrid = _.clone(self.grid.grid),
@@ -136,7 +133,7 @@
 
 				self.grid.map(function(col, row, filled) {
 					if ( filled ) {
-						grid.fill(clockwise ? 3 - row : row, clockwise ? col : 3 - col);
+						grid.fill(3 - row, col);
 					}
 				});
 
@@ -208,7 +205,11 @@
 
 			app.queue.push(new app.Tetrimino);
 
-			return app.tetrimino;
+			return app.tetrimino.render();
+		},
+
+		progress: function() {
+			app.tetrimino.down().render();
 		},
 
 		/**
