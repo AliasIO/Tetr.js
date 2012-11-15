@@ -37,9 +37,10 @@ body {
 	width: 28px;
 }
 
-	.block.bda, .block.dbc, .block.dba { background: #dd0; } /* O */
-	.block.bbb, .block.ddd             { background: #d00; } /* I */
-	.block.bdd, .block.dbb, .block.ddb { background: #d0d; } /* L */
-	.block.dbd                         { background: #0d0; } /* S */
-	.block.bdb                         { background: #0dd; } /* Z */
-	.block.bbd, .block.dbb             { background: #ddd; } /* J */
+	.block.rrr  { background: #d00; } /* I */
+	.block.ddr  { background: #d0d; } /* L */
+	.block.drd  { background: #0d0; } /* S */
+	.block.rdr  { background: #0dd; } /* Z */
+	.block.drr  { background: #ddd; } /* J */
+	.block.dru  { background: #00d; } /* O */
+	.block.rdur { background: #dd0; } /* T */

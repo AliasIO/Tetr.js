@@ -1,10 +1,9 @@
 (function() {
 	var app = {
 		blockSize: 30,
-		el: {},
-		field: {
-			grid: null
-		},
+		$: {},
+		grid: null,
+		shapes: [ 'rrr', 'drr', 'ddr', 'drd', 'rdr', 'dru', 'rdur' ],
 		tetrimino: null,
 		queue: [],
 
@@ -12,13 +11,13 @@
 		 * Initialise
 		 */
 		init: function() {
-			app.el = {
+			app.$ = {
 				main: $('#main')
 			};
 
-			app.field.grid = new app.Grid(10, 20);
+			app.grid = new app.Grid(10, 20);
 
-			_(_.range(5)).each(function(i) {
+			_(_.range(5)).each(function() {
 				app.queue.push(new app.Tetrimino);
 			});
 
@@ -52,27 +51,22 @@
 				y    = 0
 				;
 
-			self.id = '';
-
 			self.pos = { x: 0, y: 0 };
 
 			// Generate a random tetrimino
 			self.grid = new app.Grid(4, 4).fill(x, y);
 
-			while ( self.id.length < 3 ) {
-				random = _.random(3);
+			self.shape = app.shapes[_.random(app.shapes.length - 1)];
 
-				diff = {
-					x: random > 1 ? ( random % 2 && x > 0 ? -1 : 1 ) : 0,
-					y: random < 2 ? ( random % 2 && y > 0 ? -1 : 1 ) : 0
-				};
-
-				if ( !self.grid.isFilled(x + diff.x, y + diff.y) ) {
-					self.grid.fill(x += diff.x, y += diff.y);
-
-					self.id += diff.x ? diff.x < 0 ? 'a' : 'b' : diff.y < 0 ? 'c' : 'd';
+			_.map(self.shape.split(''), function(direction) {
+				switch ( direction ) {
+					case 'r': x ++; break;
+					case 'd': y ++; break;
+					case 'u': y --; break;
 				}
-			}
+
+				self.grid.fill(x, y);
+			});
 
 			self.grid.trim();
 
@@ -91,7 +85,7 @@
 					if ( y ) {
 						self.grid.trimmed.map(function(col, row, filled) {
 							if ( filled ) {
-								app.field.grid.fill(self.pos.x + col, self.pos.y + row);
+								app.grid.fill(self.pos.x + col, self.pos.y + row);
 							}
 						});
 
@@ -166,7 +160,7 @@
 				var collision;
 
 				self.grid.trimmed.map(function(col, row, filled) {
-					collision = collision || filled && app.field.grid.isFilled(self.pos.x + col, self.pos.y + row);
+					collision = collision || filled && app.grid.isFilled(self.pos.x + col, self.pos.y + row);
 				});
 
 				return collision;
@@ -186,7 +180,7 @@
 
 						$block
 							.addClass('block')
-							.addClass(self.id)
+							.addClass(self.shape)
 							.css({
 								left: ( self.pos.x + col ) * app.blockSize,
 								top:  ( self.pos.y + row ) * app.blockSize
@@ -194,7 +188,7 @@
 
 						self.el.push($block);
 
-						app.el.main.append($block);
+						app.$.main.append($block);
 					}
 				});
 
