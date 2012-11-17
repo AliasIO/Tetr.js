@@ -25,10 +25,15 @@
 			app.next();
 
 			// Key bindings
-			KeyboardJS.on('right', function() { app.tetrimino .right().render(); });
+			KeyboardJS.on('w',     function() { app.tetrimino.rotate().render(); });
+			KeyboardJS.on('a',     function() { app.tetrimino  .left().render(); });
+			KeyboardJS.on('s',     function() { app.tetrimino  .down().render(); });
+			KeyboardJS.on('d',     function() { app.tetrimino .right().render(); });
+
+			KeyboardJS.on('up',    function() { app.tetrimino.rotate().render(); });
 			KeyboardJS.on('left',  function() { app.tetrimino  .left().render(); });
 			KeyboardJS.on('down',  function() { app.tetrimino  .down().render(); });
-			KeyboardJS.on('up',    function() { app.tetrimino.rotate().render(); });
+			KeyboardJS.on('right', function() { app.tetrimino .right().render(); });
 
 			app.interval = setInterval(app.progress, app.delay);
 		},
@@ -76,17 +81,7 @@
 					self.pos = oldPos;
 
 					if ( y ) {
-						self.grid.trimmed.map(function(col, row, filled) {
-							if ( filled ) {
-								if ( !self.pos.y ) {
-									alert('end');
-								}
-
-								app.grid.fill(self.pos.x + col, self.pos.y + row);
-							}
-						});
-
-						return app.next();
+						return app.land();
 					}
 				}
 
@@ -196,6 +191,45 @@
 		/**
 		 *
 		 */
+		progress: function() {
+			app.tetrimino.down().render();
+		},
+
+		/**
+		 *
+		 */
+		land: function() {
+			var
+				filledCols = {},
+				filledRows = []
+				;
+
+			app.tetrimino.grid.trimmed.map(function(col, row, filled) {
+				if ( filled ) {
+					app.grid.fill(app.tetrimino.pos.x + col, app.tetrimino.pos.y + row);
+				}
+			});
+
+			app.grid.map(function(col, row, filled) {
+				if ( _.isUndefined(filledCols[row]) ) {
+					filledCols[row] = 0;
+				}
+
+				filledCols[row] += filled ? 1 : 0;
+
+				if ( filledCols[row] === app.grid.cols ) {
+					filledRows.push(row);
+				}
+			});
+
+			console.log(filledRows);
+
+			return app.next();
+		},
+
+		/**
+		 *
+		 */
 		next: function() {
 			if ( app.tetrimino ) {
 				app.tetrimino.render();
@@ -208,8 +242,13 @@
 			return app.tetrimino.render();
 		},
 
-		progress: function() {
-			app.tetrimino.down().render();
+		/**
+		 *
+		 */
+		gameOver: function() {
+			console.log('gameOver');
+
+			clearInterval(app.interval);
 		},
 
 		/**
@@ -220,6 +259,9 @@
 				trim,
 				self = this
 				;
+
+			self.cols = cols;
+			self.rows = rows;
 
 			self.grid = _(_.range(cols)).map(function() {
 				return _(_.range(rows)).map(function() {
