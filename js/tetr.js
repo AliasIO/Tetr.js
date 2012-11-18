@@ -5,6 +5,7 @@
 		grid: null,
 		shapes: [ 'rrr', 'drr', 'ddr', 'drd', 'rdr', 'dru', 'rdur' ],
 		delay: 1000,
+		lastId: 0,
 		tetrimino: null,
 		queue: [],
 
@@ -35,6 +36,8 @@
 			KeyboardJS.on('down',  function() { app.tetrimino  .down().render(); });
 			KeyboardJS.on('right', function() { app.tetrimino .right().render(); });
 
+			KeyboardJS.on('space', function() { app.tetrimino  .drop().render(); });
+
 			app.interval = setInterval(app.progress, app.delay);
 		},
 
@@ -48,6 +51,8 @@
 				x    = 0,
 				y    = 0
 				;
+
+			self.id = ++ app.lastId;
 
 			self.pos = { x: 0, y: 0 };
 
@@ -113,6 +118,19 @@
 				console.log('down');
 
 				return move(0, 1);
+			};
+
+			/**
+			 *
+			 */
+			self.drop = function() {
+				console.log('drop');
+
+				var id = self.down().id;
+
+				while ( self.down().id === id );
+
+				return self.render();
 			};
 
 			/**
