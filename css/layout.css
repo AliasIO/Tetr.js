@@ -25,8 +25,22 @@ body {
 	height: 600px;
 	left: 300px;
 	position: absolute;
-	width: 200px;
+	width: 210px;
 }
+
+#queue {
+	background: #f8f8f8;
+	height: 60px;
+	margin: 15px 0 0 15px;
+	overflow: hidden;
+	position: relative;
+	width: 180px;
+}
+
+	#queue .block {
+		height: 13px;
+		width: 13px;
+	}
 
 .block {
 	background: #222;
@@ -37,7 +51,7 @@ body {
 	width: 28px;
 }
 
-	.block.rrr  { background: #d00; } /* I */
+	.block.ddd  { background: #d00; } /* I */
 	.block.ddr  { background: #d0d; } /* L */
 	.block.drd  { background: #0d0; } /* S */
 	.block.rdr  { background: #0dd; } /* Z */

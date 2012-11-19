@@ -1,9 +1,9 @@
 (function($) {
 	var app = {
-		blockSize: 30,
+		blockSize: { main: 30, next: 15 },
 		el: {},
 		grid: null,
-		shapes: [ 'rrr', 'drr', 'ddr', 'drd', 'rdr', 'dru', 'rdur' ],
+		shapes: [ 'ddd', 'drr', 'ddr', 'drd', 'rdr', 'dru', 'rdur' ],
 		delay: 1000,
 		lastId: 0,
 		tetrimino: null,
@@ -14,12 +14,13 @@
 		 */
 		init: function() {
 			app.el = {
-				main: $('#main')
+				main: $('#main'),
+				queue: $('#queue')
 			};
 
 			app.grid = new app.Grid(10, 20);
 
-			_(_.range(5)).each(function() {
+			_(_.range(6)).each(function() {
 				app.queue.push(new app.Tetrimino);
 			});
 
@@ -54,8 +55,6 @@
 
 			self.id = ++ app.lastId;
 
-			self.pos = { x: 0, y: 0 };
-
 			// Generate a random tetrimino
 			self.shape = app.shapes[_.random(app.shapes.length - 1)];
 
@@ -72,6 +71,8 @@
 			});
 
 			self.grid.trim();
+
+			self.pos = { x: 0, y: 1 - self.grid.trimmed.rows };
 
 			/**
 			 *
@@ -187,9 +188,11 @@
 				self.grid.trimmed.map(function(col, row, block) {
 					if ( block ) {
 						block.el
+							.stop()
+							.appendTo(app.el.main)
 							.css({
-								left: ( self.pos.x + col ) * app.blockSize,
-								top:  ( self.pos.y + row ) * app.blockSize
+								left: ( self.pos.x + col ) * app.blockSize.main,
+								top:  ( self.pos.y + row ) * app.blockSize.main
 							});
 					}
 				});
@@ -271,6 +274,14 @@
 				});
 			}
 
+			// Check for game over
+			app.grid.map(function(col, row, block) {
+				if ( block && row === 0 ) {
+					console.log(row);
+					app.gameOver();
+				}
+			});
+
 			return app.next();
 		},
 
@@ -278,6 +289,10 @@
 		 *
 		 */
 		next: function() {
+			console.log('next');
+
+			var posX = 0;
+
 			if ( app.tetrimino ) {
 				app.tetrimino.render();
 			}
@@ -285,6 +300,32 @@
 			app.tetrimino = app.queue.shift();
 
 			app.queue.push(new app.Tetrimino);
+
+			_.each(app.queue, function(tetrimino, i) {
+				tetrimino.grid.trimmed.map(function(col, row, block) {
+					if ( block ) {
+						if ( block.el.parent()[0] !== app.el.queue[0] ) {
+							app.el.queue.append(block.el);
+
+							block.el
+								.css({
+									left: ( col + posX ) * app.blockSize.next,
+									top:  row            * app.blockSize.next
+								});
+						}
+
+						block.el
+							.stop()
+							.animate({
+								left: ( col + posX ) * app.blockSize.next
+							}, 'fast')
+							;
+					}
+				});
+
+				posX += tetrimino.grid.trimmed.cols + 1;
+			});
+
 
 			return app.tetrimino.render();
 		},
@@ -324,7 +365,7 @@
 			 * @return boolean
 			 */
 			self.isFilled = function(x, y) {
-				return _.isUndefined(self.grid[x]) || _.isUndefined(self.grid[x][y]) || self.grid[x][y];
+				return ( x < 0 || x > self.grid.cols || y > 0 ) && ( _.isUndefined(self.grid[x]) || _.isUndefined(self.grid[x][y]) || self.grid[x][y] );
 			};
 
 			/**
@@ -333,6 +374,8 @@
 			self.fill = function(x, y, block) {
 				if ( !self.isFilled(x, y) ) {
 					self.grid[x][y] = block;
+				} else {
+					block.el.remove();
 				}
 
 				return self;
@@ -392,10 +435,10 @@
 				_.each(g,               function(row) { if ( row[0]              ) { top    = false; } });
 				_.each(g,               function(row) { if ( row[row.length - 1] ) { bottom = false; } });
 
-				if ( right  ) { g.shift(); }
-				if ( left   ) { g.pop();   }
-				if ( top    ) { _.each(g, function(row) { row.shift(); }); }
-				if ( bottom ) { _.each(g, function(row) { row.pop();   }); }
+				if ( right  ) { g.shift();                                 self.trimmed.cols --; }
+				if ( left   ) { g.pop();                                   self.trimmed.cols --; }
+				if ( top    ) { _.each(g, function(row) { row.shift(); }); self.trimmed.rows --; }
+				if ( bottom ) { _.each(g, function(row) { row.pop();   }); self.trimmed.rows --; }
 
 				if ( top || right || bottom || left ) {
 					trim();
