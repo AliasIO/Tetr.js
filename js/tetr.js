@@ -27,15 +27,10 @@
 			app.next();
 
 			// Key bindings
-			KeyboardJS.on('w',     function() { app.tetrimino.rotate().render(); });
-			KeyboardJS.on('a',     function() { app.tetrimino  .left().render(); });
-			KeyboardJS.on('s',     function() { app.tetrimino  .down().render(); });
-			KeyboardJS.on('d',     function() { app.tetrimino .right().render(); });
-
-			KeyboardJS.on('up',    function() { app.tetrimino.rotate().render(); });
-			KeyboardJS.on('left',  function() { app.tetrimino  .left().render(); });
-			KeyboardJS.on('down',  function() { app.tetrimino  .down().render(); });
-			KeyboardJS.on('right', function() { app.tetrimino .right().render(); });
+			KeyboardJS.on('w, up',    function() { app.tetrimino.rotate().render(); });
+			KeyboardJS.on('a, left',  function() { app.tetrimino  .left().render(); });
+			KeyboardJS.on('s, down',  function() { app.tetrimino  .down().render(); });
+			KeyboardJS.on('d, right', function() { app.tetrimino .right().render(); });
 
 			KeyboardJS.on('space', function() { app.tetrimino  .drop().render(); });
 
@@ -47,10 +42,11 @@
 		 */
 		Tetrimino: function() {
 			var
-				move, random, diff,
-				self = this,
-				x    = 0,
-				y    = 0
+				move,
+				self   = this,
+				blocks = [],
+				x      = 0,
+				y      = 0
 				;
 
 			self.id = ++ app.lastId;
@@ -58,7 +54,7 @@
 			// Generate a random tetrimino
 			self.shape = app.shapes[_.random(app.shapes.length - 1)];
 
-			self.grid = new app.Grid(4, 4).fill(x, y, new app.Block(self.shape));
+			blocks.push(new app.Block(self, x, y));
 
 			_.map(self.shape.split(''), function(direction) {
 				switch ( direction ) {
@@ -67,29 +63,25 @@
 					case 'u': y --; break;
 				}
 
-				self.grid.fill(x, y, new app.Block(self.shape));
+				blocks.push(new app.Block(self, x, y));
 			});
-
-			self.grid.trim();
-
-			self.pos = { x: 0, y: 1 - self.grid.trimmed.rows };
 
 			/**
 			 *
 			 */
 			move = function(x, y) {
-				var oldPos = _.clone(self.pos);
+				_.each(blocks, function(block) {
+					block.pos.x += x;
+					block.pos.y += y;
 
-				self.pos.x += x;
-				self.pos.y += y;
+					app.grid.place(block);
+				});
 
-				if ( self.collision() ) {
-					self.pos = oldPos;
-
-					if ( y ) {
-						return app.land();
-					}
+				/*
+				if ( self.collision() && y ) {
+					return app.land();
 				}
+				*/
 
 				return self;
 			};
@@ -153,13 +145,7 @@
 
 				self.grid.grid = grid.grid;
 
-				self.grid.trim();
-
-				if ( self.collision() ) {
-					self.grid.grid = oldGrid;
-
-					self.grid.trim();
-				}
+				//self.grid.trim();
 
 				return self;
 			};
@@ -168,45 +154,59 @@
 			 *
 			 */
 			self.collision = function() {
-				var collision;
-
-				self.grid.trimmed.map(function(col, row, block) {
-					collision = collision || block && app.grid.isFilled(self.pos.x + col, self.pos.y + row);
+				_.each(blocks, function(block) {
+					block.collision();
 				});
 
-				return collision;
+				return self;
 			};
 
 			/**
 			 *
 			 */
 			self.render = function() {
-				_.map(self.el, function(el) { el.remove(); });
-
-				self.el = [];
-
-				self.grid.trimmed.map(function(col, row, block) {
-					if ( block ) {
-						block.el
-							.stop()
-							.appendTo(app.el.main)
-							.css({
-								left: ( self.pos.x + col ) * app.blockSize.main,
-								top:  ( self.pos.y + row ) * app.blockSize.main
-							});
-					}
+				blocks.map(function(block) {
+					block.render();
 				});
 
 				return self;
 			};
 		},
 
-		Block: function(shape) {
+		Block: function(tetrimino, x, y) {
 			var self = this;
 
-			self.el = $('<div>').addClass('block').addClass(shape);
+			self.tetrimino = tetrimino;
+
+			self.pos = { x: x, y: y };
+
+			self.oldPos = _.clone(self.pos);
+
+			self.el = $('<div>').addClass('block').addClass(tetrimino.shape);
 
 			app.el.main.append(self.el);
+
+			/**
+			 *
+			 */
+			self.collision = function() {
+				self.pos = _.clone(self.oldPos);
+			}
+
+			/**
+			 *
+			 */
+			self.render = function() {
+				self.oldPos = _.clone(self.pos);
+
+				self.el
+					.stop()
+					.appendTo(app.el.main)
+					.css({
+						left: self.pos.x * app.blockSize.main,
+						top:  self.pos.y * app.blockSize.main
+					});
+			}
 
 			return self;
 		},
@@ -228,13 +228,6 @@
 				;
 
 			app.tetrimino.render();
-
-			// Add blocks to main grid
-			app.tetrimino.grid.trimmed.map(function(col, row, block) {
-				if ( block ) {
-					app.grid.fill(app.tetrimino.pos.x + col, app.tetrimino.pos.y + row, block);
-				}
-			});
 
 			// Check main grid for completed lines
 			app.grid.map(function(col, row, block) {
@@ -258,12 +251,15 @@
 								app.grid.clear(x, y);
 
 								app.grid.map(function(x2, y2, block) {
-									if ( block && y2 < y ) {
+									if ( !_.isNull(block) && y2 < y ) {
+										app.grid.clear(x2, y2, block);
+										app.grid.fill(x2, y2 + 1, block);
+
 										setTimeout(function() {
-											app.grid.grid[x2][y2].el
+											block.el
 												.stop()
 												.animate({
-													top: ( y2 + 1 ) * app.blockSize
+													top: ( y2 + 1 ) * app.blockSize.main
 												}, 50);
 										}, x2 * 50);
 									}
@@ -302,28 +298,24 @@
 			app.queue.push(new app.Tetrimino);
 
 			_.each(app.queue, function(tetrimino, i) {
-				tetrimino.grid.trimmed.map(function(col, row, block) {
-					if ( block ) {
-						if ( block.el.parent()[0] !== app.el.queue[0] ) {
-							app.el.queue.append(block.el);
-
-							block.el
-								.css({
-									left: ( col + posX ) * app.blockSize.next,
-									top:  row            * app.blockSize.next
-								});
-						}
+				_.each(tetrimino.blocks, function(block) {
+					if ( block.el.parent()[0] !== app.el.queue[0] ) {
+						app.el.queue.append(block.el);
 
 						block.el
-							.stop()
-							.animate({
-								left: ( col + posX ) * app.blockSize.next
-							}, 'fast')
-							;
+							.css({
+								left: ( col + posX ) * app.blockSize.next,
+								top:  row            * app.blockSize.next
+							});
 					}
-				});
 
-				posX += tetrimino.grid.trimmed.cols + 1;
+					block.el
+						.stop()
+						.animate({
+							left: ( col + posX ) * app.blockSize.next
+						}, 'fast')
+						;
+				});
 			});
 
 
@@ -344,7 +336,7 @@
 		 */
 		Grid: function(cols, rows) {
 			var
-				trim,
+				//trim,
 				self = this
 				;
 
@@ -371,15 +363,32 @@
 			/**
 			 *
 			 */
+			self.place = function(block) {
+				if ( !self.isFilled(block.pos.x, block.pos.y) ) {
+					self.grid[block.pos.x][block.pos.y] = block;
+				} else {
+					block.tetrimino.collision();
+				}
+
+				return self;
+			};
+
+			/**
+			 *
+			 */
+			/*
 			self.fill = function(x, y, block) {
 				if ( !self.isFilled(x, y) ) {
 					self.grid[x][y] = block;
+
+					block.pos = { x: x, y: y };
 				} else {
 					block.el.remove();
 				}
 
 				return self;
 			};
+			*/
 
 			/**
 			 *
@@ -397,6 +406,21 @@
 			/**
 			 *
 			 */
+			/*
+			self.move = function(x, y, block) {
+				if ( self.isFilled(x, y) ) {
+					self.grid[x][y].el.remove();
+
+					self.grid[x][y] = null;
+				}
+
+				return self;
+			};
+			*/
+
+			/**
+			 *
+			 */
 			self.map = function(callback) {
 				_.each(self.grid, function(col, x) {
 					_.each(col, function(block, y) {
@@ -408,6 +432,7 @@
 			/**
 			 *
 			 */
+			/*
 			self.trim = function() {
 				self.trimmed = new app.Grid(4, 4);
 
@@ -417,10 +442,12 @@
 
 				return self;
 			};
+			*/
 
 			/**
 			 *
 			 */
+			/*
 			trim = function() {
 				var
 					g      = self.trimmed.grid,
@@ -444,10 +471,11 @@
 					trim();
 				}
 			};
+			*/
 
 			return self;
 		}
 	}
 
-	$(function() { app.init(); });
+	$(app.init);
 })(jQuery);
