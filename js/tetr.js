@@ -4,7 +4,7 @@
 	var Tetris = function() {
 		var self = this;
 
-		this.shapes    = [ 'ddd', 'drr', 'ddr', 'drd', 'rdr', 'dru', 'rdur' ];
+		this.shapes    = ['ddd', 'drr', 'ddr', 'drd', 'rdr', 'dru', 'rdur'];
 		this.blockSize = { main: 30, queue: 15 };
 		this.delay     = 1000;
 		this.lastId    = 0;
@@ -60,7 +60,7 @@
 
 		// Check main field for completed lines
 		this.field.main.each(function(x, y, block) {
-			if ( filledCols[y] === undefined ) {
+			if ( typeof filledCols[y] === 'undefined' ) {
 				filledCols[y] = 0;
 			}
 
@@ -73,7 +73,7 @@
 
 		// Remove completed lines
 		if ( filledRows ) {
-			$.forEach(filledRows, function(row) {
+			$.each(filledRows, function(row) {
 				self.field.main.each(function(x, y, block) {
 					if ( y === row ) {
 						block.el.fadeOut(x * 50, function() {
@@ -82,7 +82,15 @@
 							// Drop above rows
 							self.field.main.each(function(x2, y2, block) {
 								if ( block && y2 < y ) {
-									self.field.main.move(block, x2, y2 + 1);
+									block.tetrimino.field.grid[x2, y2] = null;
+
+									block.pos.y ++;
+								}
+							});
+
+							self.field.main.each(function(x2, y2, block) {
+								if ( block ) {
+									block.tetrimino.field.place(block);
 
 									block.render();
 								}
@@ -107,19 +115,19 @@
 	 *
 	 */
 	Tetris.prototype.next = function() {
-		var pos;
+		var offset;
 
 		console.log('next');
 
 		this.tetrimino = this.queue.shift();
 
-		pos = this.tetrimino.pos();
+		offset = this.tetrimino.offset();
 
 		$.each(this.tetrimino.blocks, function() {
 			this.tetrimino.field.grid[this.pos.x][this.pos.y] = null;
 
-			this.pos.x -= pos.x;
-			this.pos.y -= pos.y;
+			this.pos.x -= offset.x;
+			this.pos.y -= offset.y;
 		});
 
 		this.tetrimino.field = this.field.main;
@@ -217,7 +225,7 @@
 		});
 
 		$.each(this.blocks, function() {
-			return self.field.place(this);
+			self.field.place(this);
 		});
 
 		return this;
@@ -240,7 +248,32 @@
 	 *
 	 */
 	Tetrimino.prototype.rotate = function() {
+		var
+			self   = this,
+			size   = this.size(),
+			offset = this.offset()
+			;
+
 		console.log('rotate');
+
+		$.each(this.blocks, function() {
+			var pos = $.extend({}, this.pos);
+
+			this.pos = {
+				x: size.y - 1 - pos.y - offset.y + offset.x,
+				y:              pos.x - offset.x + offset.y
+				};
+
+			console.log(this.pos);
+
+			if ( self.field.available(this.pos.x, this.pos.y, this) ) {
+				self.field.grid[pos.x][pos.y] = null;
+			}
+		});
+
+		$.each(this.blocks, function() {
+			self.field.place(this);
+		});
 
 		return this;
 	};
@@ -259,17 +292,19 @@
 		}
 
 		$.each(this.blocks, function() {
+			land = land || this.pos.y > this.oldPos.y;
+
 			this.collision();
-
-			land = land || this.pos.y === self.tetris.field.rows - 1 || this.pos.y > this.oldPos.y;
 		});
 
-		$.each(this.blocks, function() {
-			//self.field.place(this);
-		});
+		if ( this.field.id === 'main' ) {
+			$.each(this.blocks, function() {
+				self.field.place(this);
+			});
 
-		if ( land ) {
-			this.tetris.land(this);
+			if ( land ) {
+				this.tetris.land(this);
+			}
 		}
 
 		return this;
@@ -278,17 +313,17 @@
 	/**
 	 *
 	 */
-	Tetrimino.prototype.pos = function() {
-		var pos = { x: Infinity, y: Infinity };
+	Tetrimino.prototype.offset = function() {
+		var offset = { x: Infinity, y: Infinity };
 
 		$.each(this.blocks, function() {
-			pos = {
-				x: Math.min(pos.x, this.pos.x),
-				y: Math.min(pos.y, this.pos.y)
+			offset = {
+				x: Math.min(offset.x, this.pos.x),
+				y: Math.min(offset.y, this.pos.y)
 				};
 		});
 
-		return pos;
+		return offset;
 	};
 
 	/**
@@ -299,20 +334,20 @@
 
 		$.each(this.blocks, function() {
 			max = {
-				x: Math.max(max.x, this.pos.x),
-				y: Math.max(max.y, this.pos.y)
+				x: Math.max(max.x, this.pos.x + 1),
+				y: Math.max(max.y, this.pos.y + 1)
 				};
 		});
 
-		return { x: max.x - this.pos().x, y: max.y - this.pos().y };
+		return { x: max.x - this.offset().x, y: max.y - this.offset().y };
 	};
 
 	/**
 	 *
 	 */
 	Tetrimino.prototype.render = function() {
-		this.blocks.map(function(block) {
-			block.render();
+		$.each(this.blocks, function() {
+			this.render();
 		});
 
 		return this;
@@ -462,8 +497,8 @@
 	 */
 	Field.prototype.each = function(callback) {
 		$.each(this.grid, function(x) {
-			$.each(this, function(y) {
-				callback(x, y, this);
+			$.each(this, function(y, block) {
+				callback(x, y, block);
 			});
 		});
 
