@@ -21,18 +21,16 @@
 			queue: new Field(this, 'queue', 99, 4)
 			};
 
-		$.each(new Array(6), function() {
-			self.queueAdd();
-		});
+		$.each(new Array(6), function() { self.queueAdd(); });
 
 		this.next();
 
 		// Key bindings
-		Mousetrap.bind('space',        function() { self.tetrimino.drop()     .render(); });
-		Mousetrap.bind(['w', 'up'   ], function() { self.tetrimino.rotate()   .render(); });
-		Mousetrap.bind(['a', 'left' ], function() { self.tetrimino.move(-1, 0).render(); });
-		Mousetrap.bind(['s', 'down' ], function() { self.tetrimino.move( 0, 1).render(); });
-		Mousetrap.bind(['d', 'right'], function() { self.tetrimino.move( 1, 0).render(); });
+		Mousetrap.bind('space',        function() { self.tetrimino.drop()     .place().render(); });
+		Mousetrap.bind(['w', 'up'   ], function() { self.tetrimino.rotate()   .place().render(); });
+		Mousetrap.bind(['a', 'left' ], function() { self.tetrimino.move(-1, 0).place().render(); });
+		Mousetrap.bind(['s', 'down' ], function() { self.tetrimino.move( 0, 1).place().render(); });
+		Mousetrap.bind(['d', 'right'], function() { self.tetrimino.move( 1, 0).place().render(); });
 
 		this.interval = setInterval(function() { self.progress(self); }, this.delay);
 
@@ -52,57 +50,66 @@
 	Tetris.prototype.land = function(tetrimino) {
 		var
 			self       = this,
-			filledCols = {},
-			filledRows = []
+			field      = tetrimino.field,
+			filledCols = [],
+			filledRows = [],
+			rows       = []
 			;
 
-		tetrimino.render();
+		tetrimino.render().breakUp();
 
-		// Check main field for completed lines
-		this.field.main.each(function(x, y, block) {
-			if ( typeof filledCols[y] === 'undefined' ) {
+		// Check field for completed lines
+		field.each(function(x, y, block) {
+			if ( !filledCols[y] ) {
 				filledCols[y] = 0;
 			}
 
 			filledCols[y] += block ? 1 : 0;
 
-			if ( filledCols[y] === self.field.main.cols ) {
+			if ( filledCols[y] === field.cols ) {
 				filledRows.push(y);
 			}
 		});
 
 		// Remove completed lines
 		if ( filledRows ) {
-			$.each(filledRows, function(row) {
-				self.field.main.each(function(x, y, block) {
+			$.each(filledRows.reverse(), function(i, row) {
+				field.each(function(x, y, block) {
 					if ( y === row ) {
-						block.el.fadeOut(x * 50, function() {
-							self.field.main.clear(x, y);
+						field.grid[block.pos.x][block.pos.y] = null;
 
-							// Drop above rows
-							self.field.main.each(function(x2, y2, block) {
-								if ( block && y2 < y ) {
-									block.tetrimino.field.grid[x2, y2] = null;
+						var el = block.el;
 
-									block.pos.y ++;
-								}
-							});
+						block = null;
 
-							self.field.main.each(function(x2, y2, block) {
-								if ( block ) {
-									block.tetrimino.field.place(block);
-
-									block.render();
-								}
-							});
-						});
+						setTimeout(function() { el.remove(); }, ( i + x + 1 ) * 20);
 					}
 				});
+
+				field.each(function(x, y, block) {
+					if ( block && y < row  ) {
+						block.tetrimino.move(0, 1);
+
+						if ( !rows[y] ) {
+							rows[y] = [];
+						}
+
+						rows[y].push(block);
+					}
+				});
+			});
+
+			$.each(rows.reverse(), function() {
+				if ( this instanceof Array ) {
+					$.each(this, function() {
+						this.tetrimino.place().render();
+					});
+				}
 			});
 		}
 
 		// Check for tetris over
-		this.field.main.each(function(x, y, block) {
+		field.each(function(x, y, block) {
 			if ( !y && block ) {
 				self.gameOver();
 			}
@@ -115,32 +122,27 @@
 	 *
 	 */
 	Tetris.prototype.next = function() {
-		var offset;
-
-		console.log('next');
+		var size;
 
 		this.tetrimino = this.queue.shift();
 
-		offset = this.tetrimino.offset();
+		size = this.tetrimino.size();
 
-		$.each(this.tetrimino.blocks, function() {
-			this.tetrimino.field.grid[this.pos.x][this.pos.y] = null;
+		// Reset position, move to main grid
+		this.tetrimino.move(- this.tetrimino.offset().x, 0).field = this.field.main;
 
-			this.pos.x -= offset.x;
-			this.pos.y -= offset.y;
+		// Move remaining queue to the left
+		$.each(this.queue, function() {
+			this.move(- size.x - 1, 0);
 		});
 
-		this.tetrimino.field = this.field.main;
-
-		$.each(this.tetrimino.blocks, function() {
-			this.tetrimino.field.place(this);
+		$.each(this.queue, function() {
+			this.place().render();
 		});
 
-		this.tetrimino.render();
+		this.tetrimino.place().render();
 
-		this.queueAdd();
-
-		return this;
+		return this.queueAdd();
 	};
 
 	/**
@@ -152,15 +154,16 @@
 			offset    = 0
 			;
 
+		// Append to the queue
 		$.each(this.queue, function() {
-			offset += this.size().x + 2;
+			offset += this.size().x + 1;
 		});
+
+		tetrimino.move(offset, 0).place().render();
 
 		this.queue.push(tetrimino);
 
-		tetrimino.move(offset, 0);
-
-		return tetrimino.render();
+		return this;
 	};
 
 	/**
@@ -177,7 +180,7 @@
 	/**
 	 *
 	 */
-	var Tetrimino = function(field) {
+	var Tetrimino = function(field, block) {
 		var
 			self = this,
 			x    = 0,
@@ -189,22 +192,27 @@
 
 		this.id = ++ this.tetris.lastId;
 
-		this.blocks = [];
+		if ( block ) {
+			this.blocks = [ block ];
+		} else {
+			this.blocks = [];
 
-		// Generate a random tetrimino
-		this.shape = this.tetris.shapes[Math.ceil(Math.random() * this.tetris.shapes.length - 1)];
+			// Generate a random tetrimino
+			this.shape = this.tetris.shapes[Math.ceil(Math.random() * this.tetris.shapes.length - 1)];
+			this.shape = this.tetris.shapes[0];
 
-		this.blocks.push(new Block(this, x, y));
+			this.blocks.push(new Block(this, x, y));
 
-		$.each(this.shape.split(''), function() {
-			switch ( this.toString() ) {
-				case 'r': x ++; break;
-				case 'd': y ++; break;
-				case 'u': y --; break;
-			}
+			$.each(this.shape.split(''), function() {
+				switch ( this.toString() ) {
+					case 'r': x ++; break;
+					case 'd': y ++; break;
+					case 'u': y --; break;
+				}
 
-			self.blocks.push(new Block(self, x, y));
-		});
+				self.blocks.push(new Block(self, x, y));
+			});
+		}
 
 		return this;
 	};
@@ -213,19 +221,8 @@
 	 *
 	 */
 	Tetrimino.prototype.move = function(x, y) {
-		var self = this;
-
 		$.each(this.blocks, function() {
-			if ( self.field.available(this.pos.x + x, this.pos.y + y, this) ) {
-				self.field.grid[this.pos.x][this.pos.y] = null;
-			}
-
-			this.pos.x += x;
-			this.pos.y += y;
-		});
-
-		$.each(this.blocks, function() {
-			self.field.place(this);
+			this.move(x, y);
 		});
 
 		return this;
@@ -235,45 +232,9 @@
 	 *
 	 */
 	Tetrimino.prototype.drop = function() {
-		console.log('drop');
-
-		//while ( self.id === tetris.tetrimino.id ) {
-			this.move(0, 1);
-		//}
-
-		return this.render();
-	};
-
-	/**
-	 *
-	 */
-	Tetrimino.prototype.rotate = function() {
-		var
-			self   = this,
-			size   = this.size(),
-			offset = this.offset()
-			;
-
-		console.log('rotate');
-
-		$.each(this.blocks, function() {
-			var pos = $.extend({}, this.pos);
-
-			this.pos = {
-				x: size.y - 1 - pos.y - offset.y + offset.x,
-				y:              pos.x - offset.x + offset.y
-				};
-
-			console.log(this.pos);
-
-			if ( self.field.available(this.pos.x, this.pos.y, this) ) {
-				self.field.grid[pos.x][pos.y] = null;
-			}
-		});
-
-		$.each(this.blocks, function() {
-			self.field.place(this);
-		});
+		while ( this.id === this.tetris.tetrimino.id ) {
+			this.move(0, 1).place();
+		}
 
 		return this;
 	};
@@ -281,31 +242,56 @@
 	/**
 	 *
 	 */
-	Tetrimino.prototype.collision = function() {
+	Tetrimino.prototype.rotate = function() {
 		var
-			self = this,
-			land = false
+			size   = this.size(),
+			offset = this.offset()
 			;
 
-		if ( this.field.id !== 'queue' ) {
-			console.log('collision');
-		}
+		$.each(this.blocks, function() {
+			this.move(
+				offset.x - ( this.pos.y - offset.y ) + size.y - 1 - this.pos.x,
+				offset.y + ( this.pos.x - offset.x )              - this.pos.y
+				);
+		});
+
+		return this.place();
+	};
+
+	/**
+	 *
+	 */
+	Tetrimino.prototype.collision = function() {
+		var land = false;
+
+		console.log('collision on field ' + this.field.id);
 
 		$.each(this.blocks, function() {
 			land = land || this.pos.y > this.oldPos.y;
 
-			this.collision();
+			this.pos = $.extend({}, this.oldPos);
 		});
 
-		if ( this.field.id === 'main' ) {
-			$.each(this.blocks, function() {
-				self.field.place(this);
-			});
+		this.place();
 
-			if ( land ) {
-				this.tetris.land(this);
-			}
+		if ( land ) {
+			this.tetris.land(this);
 		}
+
+		return this;
+	};
+
+	/**
+	 *
+	 */
+	Tetrimino.prototype.place = function() {
+		$.each(this.blocks, function() {
+			this.tetrimino.field.place(this);
+		});
+
+		$.each(this.blocks, function() {
+			this.oldPos = $.extend({}, this.pos);
+		});
 
 		return this;
 	};
@@ -330,7 +316,10 @@
 	 *
 	 */
 	Tetrimino.prototype.size = function() {
-		var max = { x: 0, y: 0 };
+		var
+			offset = this.offset(),
+			max    = { x: 0, y: 0 }
+			;
 
 		$.each(this.blocks, function() {
 			max = {
@@ -339,7 +328,7 @@
 				};
 		});
 
-		return { x: max.x - this.offset().x, y: max.y - this.offset().y };
+		return { x: max.x - offset.x, y: max.y - offset.y };
 	};
 
 	/**
@@ -356,6 +345,19 @@
 	/**
 	 *
 	 */
+	Tetrimino.prototype.breakUp = function() {
+		$.each(this.blocks, function() {
+			this.tetrimino = new Tetrimino(this.tetrimino.field, this);
+		});
+
+		this.blocks = [];
+
+		return this;
+	};
+
+	/**
+	 *
+	 */
 	var Block = function(tetrimino, x, y) {
 		this.tetrimino = tetrimino;
 		this.tetris    = tetrimino.tetris;
@@ -365,17 +367,6 @@
 
 		this.el = $('<div>').addClass('block').addClass(tetrimino.shape).attr('data-tetrimino-id', tetrimino.id);
 
-		tetrimino.field.place(this);
-
-		return this;
-	};
-
-	/**
-	 *
-	 */
-	Block.prototype.collision = function() {
-		this.pos = $.extend({}, this.oldPos);
-
 		return this;
 	};
 
@@ -383,8 +374,6 @@
 	 *
 	 */
 	Block.prototype.render = function() {
-		this.oldPos = $.extend({}, this.pos);
-
 		this.el
 			.stop()
 			.appendTo(this.tetris.el[this.tetrimino.field.id])
@@ -395,6 +384,20 @@
 
 		return this;
 	};
+
+	/**
+	 *
+	 */
+	Block.prototype.move = function(x, y) {
+		if ( this.tetrimino.field.grid[this.pos.x][this.pos.y] === this ) {
+			this.tetrimino.field.grid[this.pos.x][this.pos.y] = null;
+		}
+
+		this.pos.x += x;
+		this.pos.y += y;
+
+		return this;
+	}
 
 	/**
 	 * Create an empty field
@@ -420,13 +423,6 @@
 	};
 
 	/**
-	 *
-	 */
-	Field.prototype.valid = function(x, y) {
-		return typeof this.grid[x] !== 'undefined' && typeof this.grid[x][y] !== 'undefined';
-	};
-
-	/**
 	 * Check if a cell is empty
 	 *
 	 * @param integer x
@@ -435,7 +431,7 @@
 	 * @return boolean
 	 */
 	Field.prototype.available = function(x, y, block) {
-		if ( !this.valid(x, y) ) {
+		if ( typeof this.grid[x] === 'undefined' || typeof this.grid[x][y] === 'undefined' ) {
 			return false;
 		}
 
@@ -446,8 +442,6 @@
 		if ( block && block.tetrimino && this.grid[x][y].tetrimino ) {
 			return this.grid[x][y].tetrimino === block.tetrimino;
 		}
-
-		return false;
 	};
 
 	/**
@@ -475,19 +469,6 @@
 			$('#debug').text(grid);
 		}
 		//
-
-		return this;
-	};
-
-	/**
-	 *
-	 */
-	Field.prototype.clear = function(x, y, block) {
-		if ( this.valid(x, y) && !this.available(x, y) ) {
-			this.grid[x][y].el.remove();
-
-			this.grid[x][y] = null;
-		}
 
 		return this;
 	};
