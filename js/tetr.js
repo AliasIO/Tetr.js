@@ -101,7 +101,7 @@
 
 			$.each(rows.reverse(), function() {
 				if ( this instanceof Array ) {
-					$.each(this, function() {
+					$.each(this, function(a, b) {
 						this.tetrimino.place().render();
 					});
 				}
@@ -261,37 +261,45 @@
 	/**
 	 *
 	 */
-	Tetrimino.prototype.collision = function() {
-		var land = false;
-
-		console.log('collision on field ' + this.field.id);
-
-		$.each(this.blocks, function() {
-			land = land || this.pos.y > this.oldPos.y;
-
-			this.pos = $.extend({}, this.oldPos);
-		});
-
-		this.place();
-
-		if ( land ) {
-			this.tetris.land(this);
-		}
-
-		return this;
-	};
-
-	/**
-	 *
-	 */
 	Tetrimino.prototype.place = function() {
+		var
+			field     = this.field,
+			collision = false,
+			land      = false
+			;
+
 		$.each(this.blocks, function() {
-			this.tetrimino.field.place(this);
+			if ( field.available(this.pos.x, this.pos.y, this) ) {
+				field.grid[this.pos.x][this.pos.y] = this;
+			} else {
+				collision = true;
+			}
 		});
+
+		if ( collision ) {
+			console.log('collision on field ' + this.field.id);
+
+			// Restore blocks to their previous position
+			$.each(this.blocks, function() {
+				land = land || this.pos.y > this.oldPos.y;
+
+				this.move(this.oldPos.x - this.pos.x, this.oldPos.y - this.pos.y);
+
+				this.pos = $.extend({}, this.oldPos);
+			});
+
+			this.place();
+
+			if ( land ) {
+				this.tetris.land(this);
+			}
+		}
 
 		$.each(this.blocks, function() {
 			this.oldPos = $.extend({}, this.pos);
 		});
+
+		this.tetris.field.main.debug(); //
 
 		return this;
 	};
@@ -389,8 +397,10 @@
 	 *
 	 */
 	Block.prototype.move = function(x, y) {
-		if ( this.tetrimino.field.grid[this.pos.x][this.pos.y] === this ) {
-			this.tetrimino.field.grid[this.pos.x][this.pos.y] = null;
+		var field = this.tetrimino.field;
+
+		if ( field.available(this.pos.x, this.pos.y, this) && field.grid[this.pos.x][this.pos.y] === this ) {
+			field.grid[this.pos.x][this.pos.y] = null;
 		}
 
 		this.pos.x += x;
@@ -447,30 +457,18 @@
 	/**
 	 *
 	 */
-	Field.prototype.place = function(block) {
-		if ( this.available(block.pos.x, block.pos.y, block) ) {
-			this.grid[block.pos.x][block.pos.y] = block;
-		} else {
-			block.tetrimino.collision();
-		}
+	Field.prototype.debug = function() {
+		var grid = '';
 
-		//
-		if ( this.id === 'main' ) {
-			var grid = '';
-
-			$.each(this.grid, function(x) {
-				$.each(this, function(y) {
-					grid += this instanceof Block ? 'X' : '.';
-				});
-
-				grid += "\n";
+		$.each(this.grid, function(x) {
+			$.each(this, function(y) {
+				grid += this instanceof Block ? 'X' : '.';
 			});
 
-			$('#debug').text(grid);
-		}
-		//
+			grid += "\n";
+		});
 
-		return this;
+		$('#debug').text(grid);
 	};
 
 	/**
