@@ -1,7 +1,7 @@
 (function($) {
 	$(function() { new Tetris; });
 
-	var Tetris = function() {
+	function Tetris() {
 		var self = this;
 
 		this.shapes    = ['ddd', 'drr', 'ddr', 'drd', 'rdr', 'dru', 'rdur'];
@@ -42,80 +42,6 @@
 	 */
 	Tetris.prototype.progress = function(self) {
 		//self.tetrimino.move(0, 1).render();
-	};
-
-	/**
-	 *
-	 */
-	Tetris.prototype.land = function(tetrimino) {
-		var
-			self       = this,
-			field      = tetrimino.field,
-			filledCols = [],
-			filledRows = [],
-			rows       = []
-			;
-
-		tetrimino.render().breakUp();
-
-		// Check field for completed lines
-		field.each(function(x, y, block) {
-			if ( !filledCols[y] ) {
-				filledCols[y] = 0;
-			}
-
-			filledCols[y] += block ? 1 : 0;
-
-			if ( filledCols[y] === field.cols ) {
-				filledRows.push(y);
-			}
-		});
-
-		// Remove completed lines
-		if ( filledRows ) {
-			$.each(filledRows.reverse(), function(i, row) {
-				field.each(function(x, y, block) {
-					if ( y === row ) {
-						field.grid[block.pos.x][block.pos.y] = null;
-
-						var el = block.el;
-
-						block = null;
-
-						setTimeout(function() { el.remove(); }, ( i + x + 1 ) * 20);
-					}
-				});
-
-				field.each(function(x, y, block) {
-					if ( block && y < row  ) {
-						block.tetrimino.move(0, 1);
-
-						if ( !rows[y] ) {
-							rows[y] = [];
-						}
-
-						rows[y].push(block);
-					}
-				});
-			});
-
-			$.each(rows.reverse(), function() {
-				if ( this instanceof Array ) {
-					$.each(this, function(a, b) {
-						this.tetrimino.place().render();
-					});
-				}
-			});
-		}
-
-		// Check for tetris over
-		field.each(function(x, y, block) {
-			if ( !y && block ) {
-				self.gameOver();
-			}
-		});
-
-		return this.next();
 	};
 
 	/**
@@ -180,7 +106,7 @@
 	/**
 	 *
 	 */
-	var Tetrimino = function(field, block) {
+	function Tetrimino(field, block) {
 		var
 			self = this,
 			x    = 0,
@@ -291,7 +217,7 @@
 			this.place();
 
 			if ( land ) {
-				this.tetris.land(this);
+				this.land();
 			}
 		}
 
@@ -300,6 +226,19 @@
 		});
 
 		this.tetris.field.main.debug(); //
+
+		return this;
+	};
+
+	/**
+	 *
+	 */
+	Tetrimino.prototype.land = function() {
+		this.render().split();
+
+		this.field.checkLines();
+
+		this.tetris.next();
 
 		return this;
 	};
@@ -353,7 +292,7 @@
 	/**
 	 *
 	 */
-	Tetrimino.prototype.breakUp = function() {
+	Tetrimino.prototype.split = function() {
 		$.each(this.blocks, function() {
 			this.tetrimino = new Tetrimino(this.tetrimino.field, this);
 		});
@@ -366,7 +305,7 @@
 	/**
 	 *
 	 */
-	var Block = function(tetrimino, x, y) {
+	function Block(tetrimino, x, y) {
 		this.tetrimino = tetrimino;
 		this.tetris    = tetrimino.tetris;
 
@@ -412,7 +351,7 @@
 	/**
 	 * Create an empty field
 	 */
-	Field = function(tetris, id, cols, rows) {
+	function Field(tetris, id, cols, rows) {
 		var self = this;
 
 		this.tetris = tetris;
@@ -457,6 +396,70 @@
 	/**
 	 *
 	 */
+	Field.prototype.checkLines = function() {
+		var x, y, blocks,
+			self = this
+			;
+
+		for ( y = this.rows - 1; y >= 0; y -- ) {
+			blocks = 0;
+
+			for ( x = 0; x < this.cols; x ++ ) {
+				blocks += this.grid[x][y] ? 1 : 0;
+			}
+
+			if ( blocks === this.cols ) {
+				this.clearLine(y);
+
+				y ++;
+			}
+		}
+
+		this.each(function(x, y, block) {
+			block.tetrimino.render();
+		}, true);
+
+		for ( x = 0; x < this.cols; x ++ ) {
+			if ( this.grid[x][0] ) {
+				self.tetris.gameOver();
+			}
+		}
+	}
+
+	/**
+	 *
+	 */
+	Field.prototype.clearLine = function(row) {
+		var self = this;
+
+		this.each(function(x, y, block) {
+			if ( y === row ) {
+				self.grid[x][y] = null;
+
+				setTimeout(function() {
+					block.el.remove();
+
+					block = null;
+				}, ( x + 1 ) * 20);
+			}
+		});
+
+		this.each(function(x, y, block) {
+			if ( y < row  ) {
+				block.tetrimino.move(0, 1);
+			}
+		}, true);
+
+		this.each(function(x, y, block) {
+			if ( y < row  ) {
+				block.tetrimino.place();
+			}
+		}, true);
+	};
+
+	/**
+	 *
+	 */
 	Field.prototype.debug = function() {
 		var grid = '';
 
@@ -474,10 +477,12 @@
 	/**
 	 *
 	 */
-	Field.prototype.each = function(callback) {
+	Field.prototype.each = function(callback, skipEmpty) {
 		$.each(this.grid, function(x) {
 			$.each(this, function(y, block) {
-				callback(x, y, block);
+				if ( block || !skipEmpty ) {
+					callback(x, y, block);
+				}
 			});
 		});
 
