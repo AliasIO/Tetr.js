@@ -4,7 +4,7 @@
 	function Tetris() {
 		var self = this;
 
-		this.shapes    = ['ddd', 'drr', 'ddr', 'drd', 'rdr', 'dru', 'rdur'];
+		this.shapes    = ['dddruuurdddruuurddd', 'drr', 'ddr', 'drd', 'rdr', 'dru', 'rdur'];
 		this.blockSize = { main: 30, queue: 15 };
 		this.delay     = 1000;
 		this.lastId    = 0;
@@ -187,7 +187,7 @@
 	/**
 	 *
 	 */
-	Tetrimino.prototype.place = function() {
+	Tetrimino.prototype.place = function(stopRecursion) {
 		var
 			field     = this.field,
 			collision = false,
@@ -195,6 +195,10 @@
 			;
 
 		$.each(this.blocks, function() {
+			if ( this.destroyed ) {
+				return true;
+			}
+
 			if ( field.available(this.pos.x, this.pos.y, this) ) {
 				field.grid[this.pos.x][this.pos.y] = this;
 			} else {
@@ -214,7 +218,11 @@
 				this.pos = $.extend({}, this.oldPos);
 			});
 
-			this.place();
+			if ( !stopRecursion ) {
+				this.place(true);
+			} else {
+				console.log('Unrecoverable collision');
+			}
 
 			if ( land ) {
 				this.land();
@@ -281,9 +289,9 @@
 	/**
 	 *
 	 */
-	Tetrimino.prototype.render = function() {
+	Tetrimino.prototype.render = function(delay) {
 		$.each(this.blocks, function() {
-			this.render();
+			this.render(delay);
 		});
 
 		return this;
@@ -309,6 +317,8 @@
 		this.tetrimino = tetrimino;
 		this.tetris    = tetrimino.tetris;
 
+		this.destroyed = false;
+
 		this.pos    = { x: x, y: y };
 		this.oldPos = { x: x, y: y };
 
@@ -320,14 +330,22 @@
 	/**
 	 *
 	 */
-	Block.prototype.render = function() {
-		this.el
-			.stop()
-			.appendTo(this.tetris.el[this.tetrimino.field.id])
-			.css({
-				left: this.pos.x * this.tetris.blockSize[this.tetrimino.field.id],
-				top:  this.pos.y * this.tetris.blockSize[this.tetrimino.field.id]
-			});
+	Block.prototype.render = function(delay) {
+		(function(self) {
+			setTimeout(function() {
+				if ( self.destroyed ) {
+					self.el.remove()
+				} else {
+					self.el
+						.stop()
+						.appendTo(self.tetris.el[self.tetrimino.field.id])
+						.css({
+							left: self.pos.x * self.tetris.blockSize[self.tetrimino.field.id],
+							top:  self.pos.y * self.tetris.blockSize[self.tetrimino.field.id]
+						});
+				}
+			}, delay || 0);
+		}(this));
 
 		return this;
 	};
@@ -349,6 +367,17 @@
 	}
 
 	/**
+	 *
+	 */
+	Block.prototype.destroy = function() {
+		this.destroyed = true;
+
+		this.move(0, 0);
+
+		return this;
+	}
+
+	/**
 	 * Create an empty field
 	 */
 	function Field(tetris, id, cols, rows) {
@@ -361,7 +390,7 @@
 		this.grid   = [];
 
 		$.each(Array(cols), function(x) {
-			self.grid[x] = [];
+			self.grid[x] = {};
 
 			$.each(Array(rows), function(y) {
 				self.grid[x][y] = null;
@@ -397,18 +426,18 @@
 	 *
 	 */
 	Field.prototype.checkLines = function() {
-		var x, y, blocks,
+		var x, y, count,
 			self = this
 			;
 
 		for ( y = this.rows - 1; y >= 0; y -- ) {
-			blocks = 0;
+			count = 0;
 
 			for ( x = 0; x < this.cols; x ++ ) {
-				blocks += this.grid[x][y] ? 1 : 0;
+				count += this.grid[x][y] ? 1 : 0;
 			}
 
-			if ( blocks === this.cols ) {
+			if ( count === this.cols ) {
 				this.clearLine(y);
 
 				y ++;
@@ -416,7 +445,7 @@
 		}
 
 		this.each(function(x, y, block) {
-			block.tetrimino.render();
+			//block.tetrimino.render();
 		}, true);
 
 		for ( x = 0; x < this.cols; x ++ ) {
@@ -434,25 +463,11 @@
 
 		this.each(function(x, y, block) {
 			if ( y === row ) {
-				self.grid[x][y] = null;
-
-				setTimeout(function() {
-					block.el.remove();
-
-					block = null;
-				}, ( x + 1 ) * 20);
+				self.grid[x][row].destroy();//.render(( x + 1 ) * 50);
 			}
-		});
 
-		this.each(function(x, y, block) {
 			if ( y < row  ) {
-				block.tetrimino.move(0, 1);
-			}
-		}, true);
-
-		this.each(function(x, y, block) {
-			if ( y < row  ) {
-				block.tetrimino.place();
+				block.tetrimino.move(0, 1).place();
 			}
 		}, true);
 	};
@@ -478,13 +493,15 @@
 	 *
 	 */
 	Field.prototype.each = function(callback, skipEmpty) {
-		$.each(this.grid, function(x) {
-			$.each(this, function(y, block) {
-				if ( block || !skipEmpty ) {
-					callback(x, y, block);
+		var x, y;
+
+		for ( x = 0; x < this.cols; x ++ ) {
+			for ( y = this.rows - 1; y >= 0; y -- ) {
+				if ( this.grid[x][y] || !skipEmpty ) {
+					callback(x, y, this.grid[x][y]);
 				}
-			});
-		});
+			}
+		}
 
 		return this;
 	};
