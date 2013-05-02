@@ -4,7 +4,8 @@
 	function Tetris() {
 		var self = this;
 
-		this.shapes    = ['dddruuurdddruuurddd', 'drr', 'ddr', 'drd', 'rdr', 'dru', 'rdur'];
+		this.shapes    = ['ddd', 'drr', 'ddr', 'drd', 'rdr', 'dru', 'rdur'];
+		//this.shapes    = ['dddruuurdddruuurddd', 'drr', 'ddr', 'drd', 'rdr', 'dru', 'rdur'];
 		this.blockSize = { main: 30, queue: 15 };
 		this.delay     = 1000;
 		this.lastId    = 0;
@@ -26,7 +27,7 @@
 		this.next();
 
 		// Key bindings
-		Mousetrap.bind('space',        function() { self.tetrimino.drop()     .place().render(); });
+		Mousetrap.bind('space',        function() { self.tetrimino.drop()     .place(); });
 		Mousetrap.bind(['w', 'up'   ], function() { self.tetrimino.rotate()   .place().render(); });
 		Mousetrap.bind(['a', 'left' ], function() { self.tetrimino.move(-1, 0).place().render(); });
 		Mousetrap.bind(['s', 'down' ], function() { self.tetrimino.move( 0, 1).place().render(); });
@@ -41,7 +42,7 @@
 	 *
 	 */
 	Tetris.prototype.progress = function(self) {
-		//self.tetrimino.move(0, 1).render();
+		self.tetrimino.move(0, 1).render();
 	};
 
 	/**
@@ -125,7 +126,7 @@
 
 			// Generate a random tetrimino
 			this.shape = this.tetris.shapes[Math.ceil(Math.random() * this.tetris.shapes.length - 1)];
-			this.shape = this.tetris.shapes[0];
+			//this.shape = this.tetris.shapes[0];
 
 			this.blocks.push(new Block(this, x, y));
 
@@ -289,9 +290,9 @@
 	/**
 	 *
 	 */
-	Tetrimino.prototype.render = function(delay) {
+	Tetrimino.prototype.render = function(animate) {
 		$.each(this.blocks, function() {
-			this.render(delay);
+			this.render(animate);
 		});
 
 		return this;
@@ -330,22 +331,18 @@
 	/**
 	 *
 	 */
-	Block.prototype.render = function(delay) {
-		(function(self) {
-			setTimeout(function() {
-				if ( self.destroyed ) {
-					self.el.remove()
-				} else {
-					self.el
-						.stop()
-						.appendTo(self.tetris.el[self.tetrimino.field.id])
-						.css({
-							left: self.pos.x * self.tetris.blockSize[self.tetrimino.field.id],
-							top:  self.pos.y * self.tetris.blockSize[self.tetrimino.field.id]
-						});
-				}
-			}, delay || 0);
-		}(this));
+	Block.prototype.render = function(animate) {
+		this.el
+			.stop()
+			.appendTo(this.tetris.el[this.tetrimino.field.id])
+			.animate({
+				left: this.pos.x * this.tetris.blockSize[this.tetrimino.field.id],
+				top:  this.pos.y * this.tetris.blockSize[this.tetrimino.field.id]
+			}, animate ? 700 : 0, 'easeOutBounce');
+
+		if ( this.destroyed ) {
+			this.el.fadeOut(700);
+		}
 
 		return this;
 	};
@@ -445,7 +442,9 @@
 		}
 
 		this.each(function(x, y, block) {
-			//block.tetrimino.render();
+			setTimeout(function() {
+				block.tetrimino.render(true);
+			}, 300);
 		}, true);
 
 		for ( x = 0; x < this.cols; x ++ ) {
@@ -463,7 +462,7 @@
 
 		this.each(function(x, y, block) {
 			if ( y === row ) {
-				self.grid[x][row].destroy();//.render(( x + 1 ) * 50);
+				self.grid[x][row].destroy().render();
 			}
 
 			if ( y < row  ) {
