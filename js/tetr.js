@@ -1,26 +1,48 @@
 (function($) {
-	$(function() { new Tetris; });
+	/** @namespace */
+	var tetris = {};
 
-	function Tetris() {
+	/**
+	 * Create a new game
+	 *
+	 * @constructor
+	 * @return {Game}
+	 */
+	tetris.Game = function() {
 		var self = this;
 
-		this.shapes    = ['ddd', 'drr', 'ddr', 'drd', 'rdr', 'dru', 'rdur'];
-		//this.shapes    = ['dddruuurdddruuurddd', 'drr', 'ddr', 'drd', 'rdr', 'dru', 'rdur'];
-		this.blockSize = { main: 30, queue: 15 };
-		this.delay     = 1000;
-		this.lastId    = 0;
-		this.tetrimino = null;
-		this.queue     = [];
+		/** @member */
+		this.shapes = ['ddd', 'drr', 'ddr', 'drd', 'rdr', 'dru', 'rdur'];
 
+		/** @member */
+		this.blockSize = { main: 30, queue: 15 };
+
+		/** @member */
+		this.delay = 1000;
+
+		/** @member */
+		this.lastId = 0;
+
+		/** @member */
+		this.tetrimino = null;
+
+		/** @member */
+		this.queue = [];
+
+		/** @member */
 		this.el = {
 			main:  $('#main'),
 			queue: $('#queue')
 			};
 
+		/** @member */
 		this.field = {
-			main:  new Field(this, 'main',  10, 20),
-			queue: new Field(this, 'queue', 99, 4)
+			main:  new tetris.Field(this, 'main',  10, 20),
+			queue: new tetris.Field(this, 'queue', 99, 4)
 			};
+
+		/** @member */
+		this.interval = setInterval(function() { self.progress(self); }, this.delay);
 
 		$.each(new Array(6), function() { self.queueAdd(); });
 
@@ -33,22 +55,27 @@
 		Mousetrap.bind(['s', 'down' ], function() { self.tetrimino.move( 0, 1).place().render(); });
 		Mousetrap.bind(['d', 'right'], function() { self.tetrimino.move( 1, 0).place().render(); });
 
-		this.interval = setInterval(function() { self.progress(self); }, this.delay);
-
 		return this;
 	};
 
 	/**
+	 * Progress the game
 	 *
+	 * @param {Game} self
+	 * @return {Game}
 	 */
-	Tetris.prototype.progress = function(self) {
-		self.tetrimino.move(0, 1).render();
+	tetris.Game.prototype.progress = function(self) {
+		//self.tetrimino.move(0, 1).place().render();
+
+		return self;
 	};
 
 	/**
+	 * Get the next tetrimino in the queue
 	 *
+	 * @return {Game}
 	 */
-	Tetris.prototype.next = function() {
+	tetris.Game.prototype.next = function() {
 		var size;
 
 		this.tetrimino = this.queue.shift();
@@ -73,11 +100,13 @@
 	};
 
 	/**
+	 * Add a tetrimino to the queue
 	 *
+	 * @return {Game}
 	 */
-	Tetris.prototype.queueAdd = function() {
+	tetris.Game.prototype.queueAdd = function() {
 		var
-			tetrimino = new Tetrimino(this.field.queue),
+			tetrimino = new tetris.Tetrimino(this.field.queue),
 			offset    = 0
 			;
 
@@ -94,9 +123,11 @@
 	};
 
 	/**
+	 * Game over
 	 *
+	 * @return {Game}
 	 */
-	Tetris.prototype.gameOver = function() {
+	tetris.Game.prototype.gameOver = function() {
 		console.log('gameOver');
 
 		clearInterval(this.interval);
@@ -105,19 +136,27 @@
 	};
 
 	/**
+	 * Create a new tetrimino
 	 *
+	 * @constructor
+	 * @param {Field} field
+	 * @param {Block} [block]
 	 */
-	function Tetrimino(field, block) {
+	tetris.Tetrimino = function(field, block) {
 		var
 			self = this,
 			x    = 0,
 			y    = 0
 			;
 
+		/** @member */
 		this.field  = field;
-		this.tetris = field.tetris;
 
-		this.id = ++ this.tetris.lastId;
+		/** @member */
+		this.game = field.game;
+
+		/** @member */
+		this.id = ++ this.game.lastId;
 
 		if ( block ) {
 			this.blocks = [ block ];
@@ -125,19 +164,28 @@
 			this.blocks = [];
 
 			// Generate a random tetrimino
-			this.shape = this.tetris.shapes[Math.ceil(Math.random() * this.tetris.shapes.length - 1)];
-			//this.shape = this.tetris.shapes[0];
+			this.shape = this.game.shapes[Math.ceil(Math.random() * this.game.shapes.length - 1)];
 
-			this.blocks.push(new Block(this, x, y));
+			this.blocks.push(new tetris.Block(this, x, y));
 
 			$.each(this.shape.split(''), function() {
+				var available = true;
+
 				switch ( this.toString() ) {
 					case 'r': x ++; break;
 					case 'd': y ++; break;
 					case 'u': y --; break;
 				}
 
-				self.blocks.push(new Block(self, x, y));
+				$.each(self.blocks, function() {
+					if ( this.pos.x === x && this.pos.y === y ) {
+						available = false;
+					}
+				});
+
+				if ( available ) {
+					self.blocks.push(new tetris.Block(self, x, y));
+				}
 			});
 		}
 
@@ -145,9 +193,13 @@
 	};
 
 	/**
+	 * Move each block
 	 *
+	 * @param {integer} x
+	 * @param {integer} y
+	 * @return {Tetrimino}
 	 */
-	Tetrimino.prototype.move = function(x, y) {
+	tetris.Tetrimino.prototype.move = function(x, y) {
 		$.each(this.blocks, function() {
 			this.move(x, y);
 		});
@@ -156,10 +208,12 @@
 	};
 
 	/**
+	 * Move the tetrimino down until it collides
 	 *
+	 * @return {Tetrimino}
 	 */
-	Tetrimino.prototype.drop = function() {
-		while ( this.id === this.tetris.tetrimino.id ) {
+	tetris.Tetrimino.prototype.drop = function() {
+		while ( this.id === this.game.tetrimino.id ) {
 			this.move(0, 1).place();
 		}
 
@@ -167,9 +221,11 @@
 	};
 
 	/**
+	 * Rotate 90 degrees clockwise
 	 *
+	 * @return {Tetrimino}
 	 */
-	Tetrimino.prototype.rotate = function() {
+	tetris.Tetrimino.prototype.rotate = function() {
 		var
 			size   = this.size(),
 			offset = this.offset()
@@ -186,9 +242,12 @@
 	};
 
 	/**
+	 * Place each block on the grid and check for collisions
 	 *
+	 * @param {boolean} [stopRecursion]
+	 * @return {Tetrimino}
 	 */
-	Tetrimino.prototype.place = function(stopRecursion) {
+	tetris.Tetrimino.prototype.place = function(stopRecursion) {
 		var
 			field     = this.field,
 			collision = false,
@@ -196,11 +255,13 @@
 			;
 
 		$.each(this.blocks, function() {
+			var block = field.get(this.pos.x, this.pos.y);
+
 			if ( this.destroyed ) {
 				return true;
 			}
 
-			if ( field.available(this.pos.x, this.pos.y, this) ) {
+			if ( block === null || block.tetrimino === this.tetrimino ) {
 				field.grid[this.pos.x][this.pos.y] = this;
 			} else {
 				collision = true;
@@ -212,7 +273,9 @@
 
 			// Restore blocks to their previous position
 			$.each(this.blocks, function() {
-				land = land || this.pos.y > this.oldPos.y;
+				if ( this.pos.y > this.oldPos.y && field.get(this.pos.x, this.pos.y + 1, this) ) {
+					land = true;
+				}
 
 				this.move(this.oldPos.x - this.pos.x, this.oldPos.y - this.pos.y);
 
@@ -234,28 +297,32 @@
 			this.oldPos = $.extend({}, this.pos);
 		});
 
-		this.tetris.field.main.debug(); //
+		this.game.field.main.debug(); //
 
 		return this;
 	};
 
 	/**
+	 * Land the tetrimino when it touches down
 	 *
+	 * @return {Tetrimino}
 	 */
-	Tetrimino.prototype.land = function() {
+	tetris.Tetrimino.prototype.land = function() {
 		this.render().split();
 
 		this.field.checkLines();
 
-		this.tetris.next();
+		this.game.next();
 
 		return this;
 	};
 
 	/**
+	 * Get the left and top offset
 	 *
+	 * @return {object}
 	 */
-	Tetrimino.prototype.offset = function() {
+	tetris.Tetrimino.prototype.offset = function() {
 		var offset = { x: Infinity, y: Infinity };
 
 		$.each(this.blocks, function() {
@@ -269,9 +336,11 @@
 	};
 
 	/**
+	 * Get the dimensions
 	 *
+	 * @return {object}
 	 */
-	Tetrimino.prototype.size = function() {
+	tetris.Tetrimino.prototype.size = function() {
 		var
 			offset = this.offset(),
 			max    = { x: 0, y: 0 }
@@ -288,9 +357,12 @@
 	};
 
 	/**
+	 * Render each block
 	 *
+	 * @param {boolean} [animate]
+	 * @return {Tetrimino}
 	 */
-	Tetrimino.prototype.render = function(animate) {
+	tetris.Tetrimino.prototype.render = function(animate) {
 		$.each(this.blocks, function() {
 			this.render(animate);
 		});
@@ -299,11 +371,13 @@
 	};
 
 	/**
+	 * Split the tetrimino into a separate tetrimino for each block
 	 *
+	 * @return {Tetrimino}
 	 */
-	Tetrimino.prototype.split = function() {
+	tetris.Tetrimino.prototype.split = function() {
 		$.each(this.blocks, function() {
-			this.tetrimino = new Tetrimino(this.tetrimino.field, this);
+			this.tetrimino = new tetris.Tetrimino(this.tetrimino.field, this);
 		});
 
 		this.blocks = [];
@@ -312,48 +386,69 @@
 	};
 
 	/**
+	 * Create a new block
 	 *
+	 * @constructor
+	 * @param {Tetrimino} tetrimino
+	 * @param {integer} x
+	 * @param {integer} y
+	 * @return {Block}
 	 */
-	function Block(tetrimino, x, y) {
+	tetris.Block = function(tetrimino, x, y) {
+		/** @member */
 		this.tetrimino = tetrimino;
-		this.tetris    = tetrimino.tetris;
 
+		/** @member */
+		this.game = tetrimino.game;
+
+		/** @member */
 		this.destroyed = false;
 
-		this.pos    = { x: x, y: y };
+		/** @member */
+		this.pos = { x: x, y: y };
+
+		/** @member */
 		this.oldPos = { x: x, y: y };
 
+		/** @member */
 		this.el = $('<div>').addClass('block').addClass(tetrimino.shape).attr('data-tetrimino-id', tetrimino.id);
 
 		return this;
 	};
 
 	/**
+	 * Render the block
 	 *
+	 * @param {boolean} [animate]
+	 * @return {Block}
 	 */
-	Block.prototype.render = function(animate) {
+	tetris.Block.prototype.render = function(animate) {
 		this.el
 			.stop()
-			.appendTo(this.tetris.el[this.tetrimino.field.id])
+			.appendTo(this.game.el[this.tetrimino.field.id])
 			.animate({
-				left: this.pos.x * this.tetris.blockSize[this.tetrimino.field.id],
-				top:  this.pos.y * this.tetris.blockSize[this.tetrimino.field.id]
+				left: this.pos.x * this.game.blockSize[this.tetrimino.field.id],
+				top:  this.pos.y * this.game.blockSize[this.tetrimino.field.id]
 			}, animate ? 700 : 0, 'easeOutBounce');
 
 		if ( this.destroyed ) {
-			this.el.fadeOut(700);
+			this.el.fadeOut(700, function() { $(this).remove(); });
 		}
 
 		return this;
 	};
 
 	/**
+	 * Move the block
 	 *
+	 * @param {integer} x
+	 * @param {integer} y
+	 * @return {Block}
 	 */
-	Block.prototype.move = function(x, y) {
+	tetris.Block.prototype.move = function(x, y) {
 		var field = this.tetrimino.field;
 
-		if ( field.available(this.pos.x, this.pos.y, this) && field.grid[this.pos.x][this.pos.y] === this ) {
+		if ( field.get(this.pos.x, this.pos.y) === this ) {
 			field.grid[this.pos.x][this.pos.y] = null;
 		}
 
@@ -364,9 +459,11 @@
 	}
 
 	/**
+	 * Destroy the block
 	 *
+	 * @return {Block}
 	 */
-	Block.prototype.destroy = function() {
+	tetris.Block.prototype.destroy = function() {
 		this.destroyed = true;
 
 		this.move(0, 0);
@@ -375,16 +472,32 @@
 	}
 
 	/**
-	 * Create an empty field
+	 * Create a new field
+	 *
+	 * @constructor
+	 * @param {Game} game
+	 * @param {string} id
+	 * @param {integer} cols
+	 * @param {integer} rows
+	 * @return {Field}
 	 */
-	function Field(tetris, id, cols, rows) {
+	tetris.Field = function(game, id, cols, rows) {
 		var self = this;
 
-		this.tetris = tetris;
-		this.cols   = cols;
-		this.rows   = rows;
-		this.id     = id;
-		this.grid   = [];
+		/** @member */
+		this.game = game;
+
+		/** @member */
+		this.cols = cols;
+
+		/** @member */
+		this.rows = rows;
+
+		/** @member */
+		this.id = id;
+
+		/** @member */
+		this.grid = [];
 
 		$.each(Array(cols), function(x) {
 			self.grid[x] = {};
@@ -398,31 +511,32 @@
 	};
 
 	/**
-	 * Check if a cell is empty
+	 * Get the value of a grid cell
+	 * Returns false if the coordinate is outside the field, true if its below
 	 *
-	 * @param integer x
-	 * @param integer y
-	 * @param object block
-	 * @return boolean
+	 * @param {integer} x
+	 * @param {integer} y
+	 * @param {Block} [block]
+	 * @return {Block|null|boolean}
 	 */
-	Field.prototype.available = function(x, y, block) {
+	tetris.Field.prototype.get = function(x, y, block) {
 		if ( typeof this.grid[x] === 'undefined' || typeof this.grid[x][y] === 'undefined' ) {
-			return false;
+			return y > this.rows;
 		}
 
-		if ( !this.grid[x][y] ) {
-			return true;
+		if ( this.grid[x][y] === block ) {
+			return null;
 		}
 
-		if ( block && block.tetrimino && this.grid[x][y].tetrimino ) {
-			return this.grid[x][y].tetrimino === block.tetrimino;
-		}
+		return this.grid[x][y];
 	};
 
 	/**
+	 * Check for completed lines
 	 *
+	 * @return {Field}
 	 */
-	Field.prototype.checkLines = function() {
+	tetris.Field.prototype.checkLines = function() {
 		var x, y, count,
 			self = this
 			;
@@ -449,15 +563,20 @@
 
 		for ( x = 0; x < this.cols; x ++ ) {
 			if ( this.grid[x][0] ) {
-				self.tetris.gameOver();
+				self.game.gameOver();
 			}
 		}
+
+		return this;
 	}
 
 	/**
+	 * Clean a completed line
 	 *
+	 * @param {integer} row
+	 * @return {field}
 	 */
-	Field.prototype.clearLine = function(row) {
+	tetris.Field.prototype.clearLine = function(row) {
 		var self = this;
 
 		this.each(function(x, y, block) {
@@ -469,29 +588,17 @@
 				block.tetrimino.move(0, 1).place();
 			}
 		}, true);
+
+		return this;
 	};
 
 	/**
+	 * Loop through each position on the field
 	 *
+	 * @param {requestCallback} callback
+	 * @param {boolean}         [skipEmpty] Only return blocks
 	 */
-	Field.prototype.debug = function() {
-		var grid = '';
-
-		$.each(this.grid, function(x) {
-			$.each(this, function(y) {
-				grid += this instanceof Block ? 'X' : '.';
-			});
-
-			grid += "\n";
-		});
-
-		$('#debug').text(grid);
-	};
-
-	/**
-	 *
-	 */
-	Field.prototype.each = function(callback, skipEmpty) {
+	tetris.Field.prototype.each = function(callback, skipEmpty) {
 		var x, y;
 
 		for ( x = 0; x < this.cols; x ++ ) {
@@ -504,4 +611,27 @@
 
 		return this;
 	};
+
+	/**
+	 * @ignore
+	 */
+	tetris.Field.prototype.debug = function() {
+		var grid = '';
+
+		$.each(this.grid, function(x) {
+			$.each(this, function(y) {
+				grid += this instanceof tetris.Block ? 'X' : '.';
+			});
+
+			grid += "\n";
+		});
+
+		$('#debug').text(grid);
+
+		return this;
+	};
+
+	$(function() { new tetris.Game; });
+
+	return tetris;
 })(jQuery);
