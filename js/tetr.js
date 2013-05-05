@@ -18,7 +18,6 @@ tetris = (function($) {
 
 		/** @member */
 		this.shapes = ['ddd', 'drr', 'ddr', 'drd', 'rdr', 'dru', 'rdur'];
-		//this.shapes = ['dddruuurdddruuurddd'];
 
 		/** @member */
 		this.blockSize = { main: 30, queue: 15 };
@@ -71,7 +70,7 @@ tetris = (function($) {
 	 * @return {Game}
 	 */
 	tetris.Game.prototype.progress = function() {
-		//this.tetrimino.move(0, 1).place().render();
+		this.tetrimino.move(0, 1).place().render();
 
 		return this;
 	};
@@ -417,7 +416,7 @@ tetris = (function($) {
 		this.game = tetrimino.game;
 
 		/** @member */
-		this.animation = false;
+		this.animation = {};
 
 		/** @member */
 		this.destroyed = false;
@@ -431,7 +430,7 @@ tetris = (function($) {
 		/** @member */
 		this.el = $('<div>').addClass('block').addClass(tetrimino.shape).attr('data-tetrimino-id', tetrimino.id);
 
-		return this;
+		return this.animate({});
 	};
 
 	/**
@@ -637,7 +636,7 @@ tetris = (function($) {
 				this.tetrimino
 					.move(0, 1)
 					.place()
-					.animate({ delay: 1000, duration: 700, easing: 'easeOutBounce' })
+					.animate({ delay: 700, duration: 700, easing: 'easeOutBounce' })
 					;
 			}
 		}, true);
