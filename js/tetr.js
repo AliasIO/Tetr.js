@@ -1,4 +1,9 @@
-(function($) {
+/*jslint browser: true, devel: true, plusplus: true, white: true */
+var tetris, game;
+
+tetris = (function($) {
+	'use strict';
+
 	/** @namespace */
 	var tetris = {};
 
@@ -13,7 +18,7 @@
 
 		/** @member */
 		this.shapes = ['ddd', 'drr', 'ddr', 'drd', 'rdr', 'dru', 'rdur'];
-		this.shapes = ['dddruuurdddruuurddd'];
+		//this.shapes = ['dddruuurdddruuurddd'];
 
 		/** @member */
 		this.blockSize = { main: 30, queue: 15 };
@@ -43,7 +48,7 @@
 			};
 
 		/** @member */
-		this.interval = setInterval(function() { self.progress(self); }, this.delay);
+		this.interval = setInterval(function() { self.progress.call(self); }, this.delay);
 
 		$.each(new Array(6), function() { self.queueAdd(); });
 
@@ -62,13 +67,13 @@
 	/**
 	 * Progress the game
 	 *
-	 * @param {Game} self
+	 * @param  {Game} self
 	 * @return {Game}
 	 */
-	tetris.Game.prototype.progress = function(self) {
-		//self.tetrimino.move(0, 1).place().render();
+	tetris.Game.prototype.progress = function() {
+		//this.tetrimino.move(0, 1).place().render();
 
-		return self;
+		return this;
 	};
 
 	/**
@@ -436,7 +441,7 @@
 	 * @return {Block}
 	 */
 	tetris.Block.prototype.animate = function(animation) {
-		this.animation = $.extend({ delay: 0, duration: 0, easing: null }, this.animation);
+		this.animation = $.extend({ delay: 0, duration: 0, easing: null }, animation);
 
 		return this;
 	};
@@ -448,7 +453,7 @@
 	 */
 	tetris.Block.prototype.render = function() {
 		if ( this.animation.delay ) {
-			(function(block) { setTimeout(function() { block.render() }, block.animation.delay); })(this);
+			(function(self) { setTimeout(function() { self.render(); }, self.animation.delay); }(this));
 
 			this.animation.delay = 0;
 
@@ -468,7 +473,7 @@
 				}, this.animation.duration, this.animation.easing);
 
 			if ( this.pos.y < 0 ) {
-				this.el.css({ opacity: .5 });
+				this.el.css({ opacity: 0.5 });
 			}
 		}
 
@@ -495,7 +500,7 @@
 		this.pos.y += y;
 
 		return this;
-	}
+	};
 
 	/**
 	 * Destroy the block
@@ -506,7 +511,7 @@
 		this.destroyed = true;
 
 		return this.move(0, 0).animate({ duration: 1000, easing: 'easeOutBounce' }).render();
-	}
+	};
 
 	/**
 	 * Create a new field
@@ -536,10 +541,10 @@
 		/** @member */
 		this.grid = [];
 
-		$.each(Array(cols), function(x) {
+		$.each(new Array(cols), function(x) {
 			self.grid[x] = {};
 
-			$.each(Array(rows), function(y) {
+			$.each(new Array(rows), function(y) {
 				self.grid[x][y] = null;
 			});
 		});
@@ -600,8 +605,8 @@
 			}
 		}
 
-		this.each(function(x, y, block) {
-			block.tetrimino.render();
+		this.each(function() {
+			this.tetrimino.render();
 		}, true);
 
 		for ( x = 0; x < this.cols; x ++ ) {
@@ -611,7 +616,7 @@
 		}
 
 		return this;
-	}
+	};
 
 	/**
 	 * Clean a completed line
@@ -622,14 +627,14 @@
 	tetris.Field.prototype.clearLine = function(row) {
 		var self = this;
 
-		this.each(function(x, y, block) {
+		this.each(function(x, y) {
 			if ( y === row ) {
 				self.grid[x][row].destroy();
 			}
 
 			// Drop blocks above cleared line
 			if ( y < row  ) {
-				block.tetrimino
+				this.tetrimino
 					.move(0, 1)
 					.place()
 					.animate({ delay: 1000, duration: 700, easing: 'easeOutBounce' })
@@ -643,6 +648,7 @@
 	/**
 	 * Loop through each position on the field, bottom to top
 	 *
+	 * @this  Block
 	 * @param {requestCallback} callback
 	 * @param {boolean}         [skipEmpty] Only return blocks
 	 */
@@ -652,7 +658,7 @@
 		for ( x = 0; x < this.cols; x ++ ) {
 			for ( y = this.rows - 1; y >= 0; y -- ) {
 				if ( this.grid[x][y] || !skipEmpty ) {
-					callback(x, y, this.grid[x][y]);
+					callback.call(this.grid[x][y], x, y);
 				}
 			}
 		}
@@ -660,7 +666,7 @@
 		return this;
 	};
 
-	$(function() { new tetris.Game; });
+	$(function() { game = new tetris.Game(); });
 
 	return tetris;
-})(jQuery);
+}(jQuery));
