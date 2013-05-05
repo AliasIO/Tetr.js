@@ -13,6 +13,7 @@
 
 		/** @member */
 		this.shapes = ['ddd', 'drr', 'ddr', 'drd', 'rdr', 'dru', 'rdur'];
+		this.shapes = ['dddruuurdddruuurddd'];
 
 		/** @member */
 		this.blockSize = { main: 30, queue: 15 };
@@ -83,7 +84,7 @@
 		size = this.tetrimino.size();
 
 		// Reset position, move to main grid
-		this.tetrimino.move(- this.tetrimino.offset().x, 0).field = this.field.main;
+		this.tetrimino.move(- this.tetrimino.offset().x, - size.y + 1).field = this.field.main;
 
 		// Move remaining queue to the left
 		$.each(this.queue, function() {
@@ -269,8 +270,6 @@
 		});
 
 		if ( collision ) {
-			console.log('collision on field ' + this.field.id);
-
 			// Restore blocks to their previous position
 			$.each(this.blocks, function() {
 				if ( this.pos.y > this.oldPos.y && field.get(this.pos.x, this.pos.y + 1, this) ) {
@@ -296,8 +295,6 @@
 		$.each(this.blocks, function() {
 			this.oldPos = $.extend({}, this.pos);
 		});
-
-		this.game.field.main.debug(); //
 
 		return this;
 	};
@@ -357,14 +354,27 @@
 	};
 
 	/**
-	 * Render each block
+	 * Animate each block
 	 *
-	 * @param {boolean} [animate]
+	 * @param {boolean|string} animation
 	 * @return {Tetrimino}
 	 */
-	tetris.Tetrimino.prototype.render = function(animate) {
+	tetris.Tetrimino.prototype.animate = function(animation) {
 		$.each(this.blocks, function() {
-			this.render(animate);
+			this.animation = animation;
+		});
+
+		return this;
+	};
+
+	/**
+	 * Render each block
+	 *
+	 * @return {Tetrimino}
+	 */
+	tetris.Tetrimino.prototype.render = function() {
+		$.each(this.blocks, function() {
+			this.render();
 		});
 
 		return this;
@@ -402,6 +412,9 @@
 		this.game = tetrimino.game;
 
 		/** @member */
+		this.animation = false;
+
+		/** @member */
 		this.destroyed = false;
 
 		/** @member */
@@ -417,23 +430,49 @@
 	};
 
 	/**
-	 * Render the block
+	 * Animate
 	 *
-	 * @param {boolean} [animate]
+	 * @param {object} animation
 	 * @return {Block}
 	 */
-	tetris.Block.prototype.render = function(animate) {
-		this.el
-			.stop()
-			.appendTo(this.game.el[this.tetrimino.field.id])
-			.animate({
-				left: this.pos.x * this.game.blockSize[this.tetrimino.field.id],
-				top:  this.pos.y * this.game.blockSize[this.tetrimino.field.id]
-			}, animate ? 700 : 0, 'easeOutBounce');
+	tetris.Block.prototype.animate = function(animation) {
+		this.animation = $.extend({ delay: 0, duration: 0, easing: null }, this.animation);
+
+		return this;
+	};
+
+	/**
+	 * Render the block
+	 *
+	 * @return {Block}
+	 */
+	tetris.Block.prototype.render = function() {
+		if ( this.animation.delay ) {
+			(function(block) { setTimeout(function() { block.render() }, block.animation.delay); })(this);
+
+			this.animation.delay = 0;
+
+			return this;
+		}
 
 		if ( this.destroyed ) {
-			this.el.fadeOut(700, function() { $(this).remove(); });
+			this.el.animate({ opacity: 0 }, this.animation.duration, this.animation.easing, function() { $(this).remove(); });
+		} else {
+			this.el
+				.stop()
+				.appendTo(this.game.el[this.tetrimino.field.id])
+				.css({ opacity: 1 })
+				.animate({
+					left: this.pos.x * this.game.blockSize[this.tetrimino.field.id],
+					top:  this.pos.y * this.game.blockSize[this.tetrimino.field.id]
+				}, this.animation.duration, this.animation.easing);
+
+			if ( this.pos.y < 0 ) {
+				this.el.css({ opacity: .5 });
+			}
 		}
+
+		this.animate({});
 
 		return this;
 	};
@@ -466,9 +505,7 @@
 	tetris.Block.prototype.destroy = function() {
 		this.destroyed = true;
 
-		this.move(0, 0);
-
-		return this;
+		return this.move(0, 0).animate({ duration: 1000, easing: 'easeOutBounce' }).render();
 	}
 
 	/**
@@ -512,7 +549,7 @@
 
 	/**
 	 * Get the value of a grid cell
-	 * Returns false if the coordinate is outside the field, true if its below
+	 * Returns a boolean if the coordinate is invalid, true invokes a landing
 	 *
 	 * @param {integer} x
 	 * @param {integer} y
@@ -520,8 +557,16 @@
 	 * @return {Block|null|boolean}
 	 */
 	tetris.Field.prototype.get = function(x, y, block) {
-		if ( typeof this.grid[x] === 'undefined' || typeof this.grid[x][y] === 'undefined' ) {
-			return y > this.rows;
+		if ( x < 0 || x >= this.cols ) {
+			return false;
+		}
+
+		if ( y >= this.rows ) {
+			return true;
+		}
+
+		if ( y < 0 ) {
+			return null;
 		}
 
 		if ( this.grid[x][y] === block ) {
@@ -556,9 +601,7 @@
 		}
 
 		this.each(function(x, y, block) {
-			setTimeout(function() {
-				block.tetrimino.render(true);
-			}, 300);
+			block.tetrimino.render();
 		}, true);
 
 		for ( x = 0; x < this.cols; x ++ ) {
@@ -581,11 +624,16 @@
 
 		this.each(function(x, y, block) {
 			if ( y === row ) {
-				self.grid[x][row].destroy().render();
+				self.grid[x][row].destroy();
 			}
 
+			// Drop blocks above cleared line
 			if ( y < row  ) {
-				block.tetrimino.move(0, 1).place();
+				block.tetrimino
+					.move(0, 1)
+					.place()
+					.animate({ delay: 1000, duration: 700, easing: 'easeOutBounce' })
+					;
 			}
 		}, true);
 
@@ -593,7 +641,7 @@
 	};
 
 	/**
-	 * Loop through each position on the field
+	 * Loop through each position on the field, bottom to top
 	 *
 	 * @param {requestCallback} callback
 	 * @param {boolean}         [skipEmpty] Only return blocks
@@ -608,25 +656,6 @@
 				}
 			}
 		}
-
-		return this;
-	};
-
-	/**
-	 * @ignore
-	 */
-	tetris.Field.prototype.debug = function() {
-		var grid = '';
-
-		$.each(this.grid, function(x) {
-			$.each(this, function(y) {
-				grid += this instanceof tetris.Block ? 'X' : '.';
-			});
-
-			grid += "\n";
-		});
-
-		$('#debug').text(grid);
 
 		return this;
 	};
