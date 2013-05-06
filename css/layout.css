@@ -122,3 +122,13 @@ body {
 	.block.drr  { background: #ddd; } /* J */
 	.block.dru  { background: #00d; } /* O */
 	.block.rdur { background: #dd0; } /* T */
+
+#github {
+	background: url('../images/github.png');
+	display: block;
+	height: 145px;
+	position: absolute;
+	right: 0;
+	top: 0;
+	width: 145px;
+}
