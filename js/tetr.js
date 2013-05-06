@@ -23,6 +23,15 @@ tetris = (function($) {
 		this.blockSize = { main: 30, queue: 15 };
 
 		/** @member */
+		this.level = 1;
+
+		/** @member */
+		this.score = 0;
+
+		/** @member */
+		this.gameOver = false;
+
+		/** @member */
 		this.delay = 1000;
 
 		/** @member */
@@ -37,13 +46,15 @@ tetris = (function($) {
 		/** @member */
 		this.el = {
 			main:  $('#main'),
-			queue: $('#queue')
+			queue: $('#queue'),
+			score: $('#score'),
+			level: $('#level')
 			};
 
 		/** @member */
 		this.field = {
 			main:  new tetris.Field(this, 'main',  10, 20),
-			queue: new tetris.Field(this, 'queue', 99, 4)
+			queue: new tetris.Field(this, 'queue', 100, 4)
 			};
 
 		/** @member */
@@ -53,12 +64,45 @@ tetris = (function($) {
 
 		this.next();
 
-		// Key bindings
-		Mousetrap.bind('space',        function() { self.tetrimino.drop()     .place(); });
-		Mousetrap.bind(['w', 'up'   ], function() { self.tetrimino.rotate()   .place().render(); });
-		Mousetrap.bind(['a', 'left' ], function() { self.tetrimino.move(-1, 0).place().render(); });
-		Mousetrap.bind(['s', 'down' ], function() { self.tetrimino.move( 0, 1).place().render(); });
-		Mousetrap.bind(['d', 'right'], function() { self.tetrimino.move( 1, 0).place().render(); });
+		$(document).keydown(function(e) {
+			if ( self.gameOver ) {
+				return;
+			}
+
+			switch ( e.keyCode ) {
+				case 32: // Space
+					self.tetrimino.drop();
+
+					break;
+				case 37: // Left
+				case 65: // a
+					self.tetrimino.move(-1, 0);
+
+					break;
+				case 13: // Enter
+				case 38: // Up
+				case 67: // w
+					self.tetrimino.rotate();
+
+					break;
+				case 39: // Right
+				case 68: // d
+					self.tetrimino.move(1, 0);
+
+					break;
+				case 40: // Down
+				case 83: // s
+					self.tetrimino.move(0, 1);
+
+					break;
+				default:
+					return;
+			}
+
+			e.preventDefault();
+
+			self.tetrimino.place().render();
+		});
 
 		return this;
 	};
@@ -66,11 +110,24 @@ tetris = (function($) {
 	/**
 	 * Progress the game
 	 *
-	 * @param  {Game} self
 	 * @return {Game}
 	 */
 	tetris.Game.prototype.progress = function() {
 		this.tetrimino.move(0, 1).place().render();
+
+		return this;
+	};
+
+	/**
+	 * Add to the score
+	 *
+	 * @param  {integer} score
+	 * @return {Game}
+	 */
+	tetris.Game.prototype.addScore = function(score) {
+		this.score += score;
+
+		this.el.score.text(this.score);
 
 		return this;
 	};
@@ -82,6 +139,10 @@ tetris = (function($) {
 	 */
 	tetris.Game.prototype.next = function() {
 		var size;
+
+		if ( this.gameOver ) {
+			return;
+		}
 
 		this.tetrimino = this.queue.shift();
 
@@ -132,8 +193,12 @@ tetris = (function($) {
 	 *
 	 * @return {Game}
 	 */
-	tetris.Game.prototype.gameOver = function() {
+	tetris.Game.prototype.end = function() {
 		console.log('gameOver');
+
+		this.tetrimino = null;
+
+		this.gameOver = true;
 
 		clearInterval(this.interval);
 
@@ -587,7 +652,8 @@ tetris = (function($) {
 	 */
 	tetris.Field.prototype.checkLines = function() {
 		var x, y, count,
-			self = this
+			cleared = 0,
+			self    = this
 			;
 
 		for ( y = this.rows - 1; y >= 0; y -- ) {
@@ -600,8 +666,14 @@ tetris = (function($) {
 			if ( count === this.cols ) {
 				this.clearLine(y);
 
+				cleared ++;
+
 				y ++;
 			}
+		}
+
+		if ( cleared ) {
+			this.game.addScore(this.game.level * cleared * 100);
 		}
 
 		this.each(function() {
@@ -610,7 +682,7 @@ tetris = (function($) {
 
 		for ( x = 0; x < this.cols; x ++ ) {
 			if ( this.grid[x][0] ) {
-				self.game.gameOver();
+				self.game.end();
 			}
 		}
 

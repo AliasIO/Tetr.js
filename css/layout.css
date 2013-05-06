@@ -1,7 +1,57 @@
+@font-face {
+    font-family: 'OrbitronLight';
+    src: url('../fonts/Orbitron/orbitron-light-webfont.eot');
+    src: url('../fonts/Orbitron/orbitron-light-webfont.eot?#iefix') format('embedded-opentype'),
+         url('../fonts/Orbitron/orbitron-light-webfont.woff') format('woff'),
+         url('../fonts/Orbitron/orbitron-light-webfont.ttf') format('truetype'),
+         url('../fonts/Orbitron/orbitron-light-webfont.svg#OrbitronLight') format('svg');
+    font-weight: normal;
+    font-style: normal;
+
+}
+
+@font-face {
+    font-family: 'OrbitronMedium';
+    src: url('../fonts/Orbitron/orbitron-medium-webfont.eot');
+    src: url('../fonts/Orbitron/orbitron-medium-webfont.eot?#iefix') format('embedded-opentype'),
+         url('../fonts/Orbitron/orbitron-medium-webfont.woff') format('woff'),
+         url('../fonts/Orbitron/orbitron-medium-webfont.ttf') format('truetype'),
+         url('../fonts/Orbitron/orbitron-medium-webfont.svg#OrbitronMedium') format('svg');
+    font-weight: normal;
+    font-style: normal;
+
+}
+
+@font-face {
+    font-family: 'OrbitronBold';
+    src: url('../fonts/Orbitron/orbitron-bold-webfont.eot');
+    src: url('../fonts/Orbitron/orbitron-bold-webfont.eot?#iefix') format('embedded-opentype'),
+         url('../fonts/Orbitron/orbitron-bold-webfont.woff') format('woff'),
+         url('../fonts/Orbitron/orbitron-bold-webfont.ttf') format('truetype'),
+         url('../fonts/Orbitron/orbitron-bold-webfont.svg#OrbitronBold') format('svg');
+    font-weight: normal;
+    font-style: normal;
+
+}
+
+@font-face {
+    font-family: 'OrbitronBlack';
+    src: url('../fonts/Orbitron/orbitron-black-webfont.eot');
+    src: url('../fonts/Orbitron/orbitron-black-webfont.eot?#iefix') format('embedded-opentype'),
+         url('../fonts/Orbitron/orbitron-black-webfont.woff') format('woff'),
+         url('../fonts/Orbitron/orbitron-black-webfont.ttf') format('truetype'),
+         url('../fonts/Orbitron/orbitron-black-webfont.svg#OrbitronBlack') format('svg');
+    font-weight: normal;
+    font-style: normal;
+
+}
+
 body {
-	background: #111;
-	font-family: Verdana, Arial, sans-serif;
-	font-size: 13px;
+	background: #001;
+	color: #fff;
+	font-family: 'OrbitronMedium', sans-serif;
+	font-size: 16px;
+	line-height: 1em;
 }
 
 #container {
@@ -14,24 +64,38 @@ body {
 }
 
 #main {
-	background: #f8f8f8;
+	background: #102;
 	height: 600px;
 	position: absolute;
 	width: 300px;
 }
 
 #sidebar {
-	background: #eee;
-	height: 600px;
+	background: #203;
+	height: 570px;
 	left: 300px;
+	padding: 15px;
 	position: absolute;
-	width: 210px;
+	width: 180px;
 }
 
+	#sidebar dl {
+		margin-bottom: 15px;
+		overflow: hidden;
+	}
+
+	#sidebar dt {
+		float: left;
+	}
+
+	#sidebar dd {
+		float: right;
+	}
+
 #queue {
-	background: #f8f8f8;
+	background: #001;
 	height: 60px;
-	margin: 15px 0 0 15px;
+	margin-bottom: 30px;
 	overflow: hidden;
 	position: relative;
 	width: 180px;
