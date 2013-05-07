@@ -2,17 +2,14 @@
 
 <html>
 	<head>
-		<title>tetr.js</title>
+		<title>JavaScript Tetris</title>
 
 		<meta charset="utf-8">
 
-		<link rel="stylesheet" href="css/reset.css">
-		<link rel="stylesheet" href="css/defaults.css">
 		<link rel="stylesheet" href="css/layout.css">
 
 		<script src="js/jquery-1.9.1.min.js"></script>
 		<script src="js/jquery.easing.min.js"></script>
-		<script src="js/mousetrap.min.js"></script>
 		<script src="js/tetr.js"></script>
 	</head>
 	<body>
@@ -21,15 +18,36 @@
 			<div id="sidebar">
 				<div id="queue"></div>
 
-				<dl>
-					<dt>Level</dt>
-					<dd id="level">1</dd>
-				</dl>
+				<div id="stats">
+					<dl>
+						<dt>Level</dt>
+						<dd id="level">1</dd>
+					</dl>
 
-				<dl>
-					<dt>Score</dt>
-					<dd id="score">0</dd>
-				</dl>
+					<dl>
+						<dt>Score</dt>
+						<dd id="score">0</dd>
+					</dl>
+				</div>
+
+				<div id="help">
+					<dl>
+						<dt>Move</dt>
+						<dd>&larr; &darr; &rarr;</dd>
+					</dl>
+					<dl>
+						<dt>Rotate</dt>
+						<dd>&uarr;</dd>
+					</dl>
+					<dl>
+						<dt>Drop</dt>
+						<dd>Spacebar</dd>
+					</dl>
+					<dl>
+						<dt>Pause</dt>
+						<dd>Esc</dd>
+					</dl>
+				</div>
 			</div>
 		</div>
 

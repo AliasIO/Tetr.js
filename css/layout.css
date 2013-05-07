@@ -50,17 +50,18 @@ body {
 	background: #001;
 	color: #fff;
 	font-family: 'OrbitronMedium', sans-serif;
-	font-size: 16px;
+	font-size: 12px;
 	line-height: 1em;
 }
 
 #container {
+	border: 1px solid #405;
 	height: 600px;
 	left: 50%;
-	margin: -300px 0 0 -250px;
+	margin: -300px 0 0 -255px;
 	position: absolute;
 	top: 50%;
-	width: 500px;
+	width: 511px;
 }
 
 #main {
@@ -72,15 +73,15 @@ body {
 
 #sidebar {
 	background: #203;
-	height: 570px;
+	border-left: 1px solid #405;
+	height: 600px;
 	left: 300px;
-	padding: 15px;
 	position: absolute;
-	width: 180px;
+	width: 210px;
 }
 
 	#sidebar dl {
-		margin-bottom: 15px;
+		margin: 0 15px 15px 15px;
 		overflow: hidden;
 	}
 
@@ -95,7 +96,7 @@ body {
 #queue {
 	background: #001;
 	height: 60px;
-	margin-bottom: 30px;
+	margin: 15px;
 	overflow: hidden;
 	position: relative;
 	width: 180px;
@@ -105,6 +106,24 @@ body {
 		height: 13px;
 		width: 13px;
 	}
+
+#stats {
+	border-color: #405;
+	border-style: solid;
+	border-width: 1px 0;
+	font-size: 16px;
+	line-height: 1em;
+	padding-top: 15px;
+}
+
+#help {
+	bottom: 0;
+	border-top: 1px solid #405;
+	color: #c9f;
+	padding-top: 15px;
+	position: absolute;
+	width: 210px;
+}
 
 .block {
 	background: #222;

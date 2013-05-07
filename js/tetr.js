@@ -29,6 +29,9 @@ tetris = (function($) {
 		this.score = 0;
 
 		/** @member */
+		this.linesCleared = 0;
+
+		/** @member */
 		this.gameOver = false;
 
 		/** @member */
@@ -119,18 +122,52 @@ tetris = (function($) {
 	};
 
 	/**
-	 * Add to the score
+	 * Update score and level
 	 *
-	 * @param  {integer} score
+	 * @param {integer} cleared
 	 * @return {Game}
 	 */
-	tetris.Game.prototype.addScore = function(score) {
-		this.score += score;
+	tetris.Game.prototype.cleared = function(cleared) {
+		var self = this;
 
-		this.el.score.text(this.score);
+		this.linesCleared += cleared;
+
+		this.score += this.level * cleared * 100;
+
+		this.el.score.text(this.numberFormat(this.score));
+
+		if ( this.level < Math.ceil(this.linesCleared / 10) ) {
+			this.level ++;
+
+			this.el.level.text(this.level);
+
+			clearInterval(this.interval);
+
+			this.delay *= 0.9;
+
+			this.interval = setInterval(function() { self.progress.call(self); }, this.delay);
+		}
 
 		return this;
 	};
+
+	/**
+	 * Add thousands separator to number
+	 *
+	 * @param {integer} n
+	 * @return {string}
+	 */
+	tetris.Game.prototype.numberFormat = function(n) {
+		var regex = /(\d+)(\d{3})/;
+
+		n = n.toString();
+
+		while ( regex.test(n) ) {
+			n = n.replace(regex, '$1' + ',' + '$2');
+		}
+
+		return n;
+	}
 
 	/**
 	 * Get the next tetrimino in the queue
@@ -148,8 +185,8 @@ tetris = (function($) {
 
 		size = this.tetrimino.size();
 
-		// Reset position, move to main grid
-		this.tetrimino.move(- this.tetrimino.offset().x, - size.y + 1).field = this.field.main;
+		// Move to middle of main field
+		this.tetrimino.move(- this.tetrimino.offset().x + Math.floor(( this.field.main.cols - size.x ) / 2), - size.y + 1).field = this.field.main;
 
 		// Move remaining queue to the left
 		$.each(this.queue, function() {
@@ -537,7 +574,7 @@ tetris = (function($) {
 				}, this.animation.duration, this.animation.easing);
 
 			if ( this.pos.y < 0 ) {
-				this.el.css({ opacity: 0.5 });
+				this.el.css({ opacity: 0.3 });
 			}
 		}
 
@@ -673,7 +710,7 @@ tetris = (function($) {
 		}
 
 		if ( cleared ) {
-			this.game.addScore(this.game.level * cleared * 100);
+			this.game.cleared(cleared);
 		}
 
 		this.each(function() {
