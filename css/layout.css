@@ -48,16 +48,27 @@
 
 body {
 	background: #001;
-	color: #fff;
-	font-family: 'OrbitronMedium', sans-serif;
-	font-size: 12px;
+	color: #e9f;
+	font-family: Verdana, Arial, sans-serif;
+	font-size: 11px;
 	line-height: 1em;
+}
+
+a {
+	color: #ecf;
+}
+
+header {
+	display: none;
 }
 
 #container {
 	border: 1px solid #405;
+	font-family: 'OrbitronMedium', sans-serif;
+	font-size: 12px;
 	height: 600px;
 	left: 50%;
+	line-height: 1em;
 	margin: -300px 0 0 -255px;
 	position: absolute;
 	top: 50%;
@@ -141,6 +152,16 @@ body {
 	.block.drr  { background: #ddd; } /* J */
 	.block.dru  { background: #00d; } /* O */
 	.block.rdur { background: #dd0; } /* T */
+
+footer {
+	bottom: 0;
+	position: absolute;
+}
+
+	footer p {
+		display: inline-block;
+		margin-right: 1em;
+	}
 
 #github {
 	background: url('../images/github.png');
