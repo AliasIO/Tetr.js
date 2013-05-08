@@ -153,6 +153,21 @@ header {
 	.block.dru  { background: #00d; } /* O */
 	.block.rdur { background: #dd0; } /* T */
 
+.message {
+	color: #fff;
+	display: none;
+	position: absolute;
+	text-align: center;
+	text-shadow: 0 0 15px #000;
+	top: 87px;
+	width: 300px;
+}
+
+	.message h2 {
+		font-weight: normal;
+		font-size: 30px;
+	}
+
 footer {
 	bottom: 0;
 	position: absolute;

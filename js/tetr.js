@@ -1,11 +1,11 @@
 /*jslint browser: true, devel: true, plusplus: true, white: true */
-var tetris, game;
+var tetrjs, game;
 
-tetris = (function($) {
+tetrjs = (function($) {
 	'use strict';
 
 	/** @namespace */
-	var tetris = {};
+	var tetrjs = {};
 
 	/**
 	 * Create a new game
@@ -13,7 +13,7 @@ tetris = (function($) {
 	 * @constructor
 	 * @return {Game}
 	 */
-	tetris.Game = function() {
+	tetrjs.Game = function() {
 		var self = this;
 
 		/** @member */
@@ -41,23 +41,15 @@ tetris = (function($) {
 		this.lastId = 0;
 
 		/** @member */
-		this.tetrimino = null;
+		this.tetromino = null;
 
 		/** @member */
 		this.queue = [];
 
 		/** @member */
-		this.el = {
-			main:  $('#main'),
-			queue: $('#queue'),
-			score: $('#score'),
-			level: $('#level')
-			};
-
-		/** @member */
 		this.field = {
-			main:  new tetris.Field(this, 'main',  10, 20),
-			queue: new tetris.Field(this, 'queue', 100, 4)
+			main:  new tetrjs.Field(this, 'main',  10, 20),
+			queue: new tetrjs.Field(this, 'queue', 100, 4)
 			};
 
 		/** @member */
@@ -74,28 +66,28 @@ tetris = (function($) {
 
 			switch ( e.keyCode ) {
 				case 32: // Space
-					self.tetrimino.drop();
+					self.tetromino.drop();
 
 					break;
 				case 37: // Left
 				case 65: // a
-					self.tetrimino.move(-1, 0);
+					self.tetromino.move(-1, 0);
 
 					break;
 				case 13: // Enter
 				case 38: // Up
 				case 67: // w
-					self.tetrimino.rotate();
+					self.tetromino.rotate();
 
 					break;
 				case 39: // Right
 				case 68: // d
-					self.tetrimino.move(1, 0);
+					self.tetromino.move(1, 0);
 
 					break;
 				case 40: // Down
 				case 83: // s
-					self.tetrimino.move(0, 1);
+					self.tetromino.move(0, 1);
 
 					break;
 				default:
@@ -104,7 +96,7 @@ tetris = (function($) {
 
 			e.preventDefault();
 
-			self.tetrimino.place().render();
+			self.tetromino.place().render();
 		});
 
 		return this;
@@ -115,8 +107,8 @@ tetris = (function($) {
 	 *
 	 * @return {Game}
 	 */
-	tetris.Game.prototype.progress = function() {
-		this.tetrimino.move(0, 1).place().render();
+	tetrjs.Game.prototype.progress = function() {
+		this.tetromino.move(0, 1).place().render();
 
 		return this;
 	};
@@ -127,19 +119,19 @@ tetris = (function($) {
 	 * @param {integer} cleared
 	 * @return {Game}
 	 */
-	tetris.Game.prototype.cleared = function(cleared) {
+	tetrjs.Game.prototype.cleared = function(cleared) {
 		var self = this;
 
 		this.linesCleared += cleared;
 
 		this.score += this.level * cleared * 100;
 
-		this.el.score.text(this.numberFormat(this.score));
+		$('#score').text(this.numberFormat(this.score));
 
 		if ( this.level < Math.ceil(this.linesCleared / 10) ) {
 			this.level ++;
 
-			this.el.level.text(this.level);
+			$('#level').text(this.level);
 
 			clearInterval(this.interval);
 
@@ -157,7 +149,7 @@ tetris = (function($) {
 	 * @param {integer} n
 	 * @return {string}
 	 */
-	tetris.Game.prototype.numberFormat = function(n) {
+	tetrjs.Game.prototype.numberFormat = function(n) {
 		var regex = /(\d+)(\d{3})/;
 
 		n = n.toString();
@@ -170,23 +162,23 @@ tetris = (function($) {
 	}
 
 	/**
-	 * Get the next tetrimino in the queue
+	 * Get the next tetromino in the queue
 	 *
 	 * @return {Game}
 	 */
-	tetris.Game.prototype.next = function() {
+	tetrjs.Game.prototype.next = function() {
 		var size;
 
 		if ( this.gameOver ) {
 			return;
 		}
 
-		this.tetrimino = this.queue.shift();
+		this.tetromino = this.queue.shift();
 
-		size = this.tetrimino.size();
+		size = this.tetromino.size();
 
 		// Move to middle of main field
-		this.tetrimino.move(- this.tetrimino.offset().x + Math.floor(( this.field.main.cols - size.x ) / 2), - size.y + 1).field = this.field.main;
+		this.tetromino.move(- this.tetromino.offset().x + Math.floor(( this.field.main.cols - size.x ) / 2), - size.y + 1).field = this.field.main;
 
 		// Move remaining queue to the left
 		$.each(this.queue, function() {
@@ -197,19 +189,19 @@ tetris = (function($) {
 			this.place().render();
 		});
 
-		this.tetrimino.place().render();
+		this.tetromino.place().render();
 
 		return this.queueAdd();
 	};
 
 	/**
-	 * Add a tetrimino to the queue
+	 * Add a tetromino to the queue
 	 *
 	 * @return {Game}
 	 */
-	tetris.Game.prototype.queueAdd = function() {
+	tetrjs.Game.prototype.queueAdd = function() {
 		var
-			tetrimino = new tetris.Tetrimino(this.field.queue),
+			tetromino = new tetrjs.tetromino(this.field.queue),
 			offset    = 0
 			;
 
@@ -218,9 +210,9 @@ tetris = (function($) {
 			offset += this.size().x + 1;
 		});
 
-		tetrimino.move(offset, 0).place().render();
+		tetromino.move(offset, 0).place().render();
 
-		this.queue.push(tetrimino);
+		this.queue.push(tetromino);
 
 		return this;
 	};
@@ -230,10 +222,8 @@ tetris = (function($) {
 	 *
 	 * @return {Game}
 	 */
-	tetris.Game.prototype.end = function() {
-		console.log('gameOver');
-
-		this.tetrimino = null;
+	tetrjs.Game.prototype.end = function() {
+		$('#gameOver').show();
 
 		this.gameOver = true;
 
@@ -243,13 +233,13 @@ tetris = (function($) {
 	};
 
 	/**
-	 * Create a new tetrimino
+	 * Create a new tetromino
 	 *
 	 * @constructor
 	 * @param {Field} field
 	 * @param {Block} [block]
 	 */
-	tetris.Tetrimino = function(field, block) {
+	tetrjs.tetromino = function(field, block) {
 		var
 			self = this,
 			x    = 0,
@@ -270,10 +260,10 @@ tetris = (function($) {
 		} else {
 			this.blocks = [];
 
-			// Generate a random tetrimino
+			// Generate a random tetromino
 			this.shape = this.game.shapes[Math.ceil(Math.random() * this.game.shapes.length - 1)];
 
-			this.blocks.push(new tetris.Block(this, x, y));
+			this.blocks.push(new tetrjs.Block(this, x, y));
 
 			$.each(this.shape.split(''), function() {
 				var available = true;
@@ -291,7 +281,7 @@ tetris = (function($) {
 				});
 
 				if ( available ) {
-					self.blocks.push(new tetris.Block(self, x, y));
+					self.blocks.push(new tetrjs.Block(self, x, y));
 				}
 			});
 		}
@@ -304,9 +294,9 @@ tetris = (function($) {
 	 *
 	 * @param {integer} x
 	 * @param {integer} y
-	 * @return {Tetrimino}
+	 * @return {tetromino}
 	 */
-	tetris.Tetrimino.prototype.move = function(x, y) {
+	tetrjs.tetromino.prototype.move = function(x, y) {
 		$.each(this.blocks, function() {
 			this.move(x, y);
 		});
@@ -315,12 +305,12 @@ tetris = (function($) {
 	};
 
 	/**
-	 * Move the tetrimino down until it collides
+	 * Move the tetromino down until it collides
 	 *
-	 * @return {Tetrimino}
+	 * @return {tetromino}
 	 */
-	tetris.Tetrimino.prototype.drop = function() {
-		while ( this.id === this.game.tetrimino.id ) {
+	tetrjs.tetromino.prototype.drop = function() {
+		while ( !this.game.gameOver && this.id === this.game.tetromino.id ) {
 			this.move(0, 1).place();
 		}
 
@@ -330,9 +320,9 @@ tetris = (function($) {
 	/**
 	 * Rotate 90 degrees clockwise
 	 *
-	 * @return {Tetrimino}
+	 * @return {tetromino}
 	 */
-	tetris.Tetrimino.prototype.rotate = function() {
+	tetrjs.tetromino.prototype.rotate = function() {
 		var
 			size   = this.size(),
 			offset = this.offset()
@@ -352,9 +342,9 @@ tetris = (function($) {
 	 * Place each block on the grid and check for collisions
 	 *
 	 * @param {boolean} [stopRecursion]
-	 * @return {Tetrimino}
+	 * @return {tetromino}
 	 */
-	tetris.Tetrimino.prototype.place = function(stopRecursion) {
+	tetrjs.tetromino.prototype.place = function(stopRecursion) {
 		var
 			field     = this.field,
 			collision = false,
@@ -368,7 +358,7 @@ tetris = (function($) {
 				return true;
 			}
 
-			if ( block === null || block.tetrimino === this.tetrimino ) {
+			if ( block === null || block.tetromino === this.tetromino ) {
 				field.grid[this.pos.x][this.pos.y] = this;
 			} else {
 				collision = true;
@@ -406,11 +396,11 @@ tetris = (function($) {
 	};
 
 	/**
-	 * Land the tetrimino when it touches down
+	 * Land the tetromino when it touches down
 	 *
-	 * @return {Tetrimino}
+	 * @return {tetromino}
 	 */
-	tetris.Tetrimino.prototype.land = function() {
+	tetrjs.tetromino.prototype.land = function() {
 		this.render().split();
 
 		this.field.checkLines();
@@ -425,7 +415,7 @@ tetris = (function($) {
 	 *
 	 * @return {object}
 	 */
-	tetris.Tetrimino.prototype.offset = function() {
+	tetrjs.tetromino.prototype.offset = function() {
 		var offset = { x: Infinity, y: Infinity };
 
 		$.each(this.blocks, function() {
@@ -443,7 +433,7 @@ tetris = (function($) {
 	 *
 	 * @return {object}
 	 */
-	tetris.Tetrimino.prototype.size = function() {
+	tetrjs.tetromino.prototype.size = function() {
 		var
 			offset = this.offset(),
 			max    = { x: 0, y: 0 }
@@ -463,9 +453,9 @@ tetris = (function($) {
 	 * Animate each block
 	 *
 	 * @param {boolean|string} animation
-	 * @return {Tetrimino}
+	 * @return {tetromino}
 	 */
-	tetris.Tetrimino.prototype.animate = function(animation) {
+	tetrjs.tetromino.prototype.animate = function(animation) {
 		$.each(this.blocks, function() {
 			this.animation = animation;
 		});
@@ -476,9 +466,9 @@ tetris = (function($) {
 	/**
 	 * Render each block
 	 *
-	 * @return {Tetrimino}
+	 * @return {tetromino}
 	 */
-	tetris.Tetrimino.prototype.render = function() {
+	tetrjs.tetromino.prototype.render = function() {
 		$.each(this.blocks, function() {
 			this.render();
 		});
@@ -487,13 +477,13 @@ tetris = (function($) {
 	};
 
 	/**
-	 * Split the tetrimino into a separate tetrimino for each block
+	 * Split the tetromino into a separate tetromino for each block
 	 *
-	 * @return {Tetrimino}
+	 * @return {tetromino}
 	 */
-	tetris.Tetrimino.prototype.split = function() {
+	tetrjs.tetromino.prototype.split = function() {
 		$.each(this.blocks, function() {
-			this.tetrimino = new tetris.Tetrimino(this.tetrimino.field, this);
+			this.tetromino = new tetrjs.tetromino(this.tetromino.field, this);
 		});
 
 		this.blocks = [];
@@ -505,17 +495,17 @@ tetris = (function($) {
 	 * Create a new block
 	 *
 	 * @constructor
-	 * @param {Tetrimino} tetrimino
+	 * @param {tetromino} tetromino
 	 * @param {integer} x
 	 * @param {integer} y
 	 * @return {Block}
 	 */
-	tetris.Block = function(tetrimino, x, y) {
+	tetrjs.Block = function(tetromino, x, y) {
 		/** @member */
-		this.tetrimino = tetrimino;
+		this.tetromino = tetromino;
 
 		/** @member */
-		this.game = tetrimino.game;
+		this.game = tetromino.game;
 
 		/** @member */
 		this.animation = {};
@@ -530,7 +520,7 @@ tetris = (function($) {
 		this.oldPos = { x: x, y: y };
 
 		/** @member */
-		this.el = $('<div>').addClass('block').addClass(tetrimino.shape).attr('data-tetrimino-id', tetrimino.id);
+		this.el = $('<div>').addClass('block').addClass(tetromino.shape).attr('data-tetromino-id', tetromino.id);
 
 		return this.animate({});
 	};
@@ -541,7 +531,7 @@ tetris = (function($) {
 	 * @param {object} animation
 	 * @return {Block}
 	 */
-	tetris.Block.prototype.animate = function(animation) {
+	tetrjs.Block.prototype.animate = function(animation) {
 		this.animation = $.extend({ delay: 0, duration: 0, easing: null }, animation);
 
 		return this;
@@ -552,7 +542,7 @@ tetris = (function($) {
 	 *
 	 * @return {Block}
 	 */
-	tetris.Block.prototype.render = function() {
+	tetrjs.Block.prototype.render = function() {
 		if ( this.animation.delay ) {
 			(function(self) { setTimeout(function() { self.render(); }, self.animation.delay); }(this));
 
@@ -566,11 +556,11 @@ tetris = (function($) {
 		} else {
 			this.el
 				.stop()
-				.appendTo(this.game.el[this.tetrimino.field.id])
+				.appendTo($('#' + this.tetromino.field.id))
 				.css({ opacity: 1 })
 				.animate({
-					left: this.pos.x * this.game.blockSize[this.tetrimino.field.id],
-					top:  this.pos.y * this.game.blockSize[this.tetrimino.field.id]
+					left: this.pos.x * this.game.blockSize[this.tetromino.field.id],
+					top:  this.pos.y * this.game.blockSize[this.tetromino.field.id]
 				}, this.animation.duration, this.animation.easing);
 
 			if ( this.pos.y < 0 ) {
@@ -590,8 +580,8 @@ tetris = (function($) {
 	 * @param {integer} y
 	 * @return {Block}
 	 */
-	tetris.Block.prototype.move = function(x, y) {
-		var field = this.tetrimino.field;
+	tetrjs.Block.prototype.move = function(x, y) {
+		var field = this.tetromino.field;
 
 		if ( field.get(this.pos.x, this.pos.y) === this ) {
 			field.grid[this.pos.x][this.pos.y] = null;
@@ -608,7 +598,7 @@ tetris = (function($) {
 	 *
 	 * @return {Block}
 	 */
-	tetris.Block.prototype.destroy = function() {
+	tetrjs.Block.prototype.destroy = function() {
 		this.destroyed = true;
 
 		return this.move(0, 0).animate({ duration: 1000, easing: 'easeOutBounce' }).render();
@@ -624,7 +614,7 @@ tetris = (function($) {
 	 * @param {integer} rows
 	 * @return {Field}
 	 */
-	tetris.Field = function(game, id, cols, rows) {
+	tetrjs.Field = function(game, id, cols, rows) {
 		var self = this;
 
 		/** @member */
@@ -662,7 +652,7 @@ tetris = (function($) {
 	 * @param {Block} [block]
 	 * @return {Block|null|boolean}
 	 */
-	tetris.Field.prototype.get = function(x, y, block) {
+	tetrjs.Field.prototype.get = function(x, y, block) {
 		if ( x < 0 || x >= this.cols ) {
 			return false;
 		}
@@ -687,7 +677,7 @@ tetris = (function($) {
 	 *
 	 * @return {Field}
 	 */
-	tetris.Field.prototype.checkLines = function() {
+	tetrjs.Field.prototype.checkLines = function() {
 		var x, y, count,
 			cleared = 0,
 			self    = this
@@ -714,7 +704,7 @@ tetris = (function($) {
 		}
 
 		this.each(function() {
-			this.tetrimino.render();
+			this.tetromino.render();
 		}, true);
 
 		for ( x = 0; x < this.cols; x ++ ) {
@@ -732,7 +722,7 @@ tetris = (function($) {
 	 * @param {integer} row
 	 * @return {field}
 	 */
-	tetris.Field.prototype.clearLine = function(row) {
+	tetrjs.Field.prototype.clearLine = function(row) {
 		var self = this;
 
 		this.each(function(x, y) {
@@ -742,7 +732,7 @@ tetris = (function($) {
 
 			// Drop blocks above cleared line
 			if ( y < row  ) {
-				this.tetrimino
+				this.tetromino
 					.move(0, 1)
 					.place()
 					.animate({ delay: 700, duration: 700, easing: 'easeOutBounce' })
@@ -760,7 +750,7 @@ tetris = (function($) {
 	 * @param {requestCallback} callback
 	 * @param {boolean}         [skipEmpty] Only return blocks
 	 */
-	tetris.Field.prototype.each = function(callback, skipEmpty) {
+	tetrjs.Field.prototype.each = function(callback, skipEmpty) {
 		var x, y;
 
 		for ( x = 0; x < this.cols; x ++ ) {
@@ -774,7 +764,7 @@ tetris = (function($) {
 		return this;
 	};
 
-	$(function() { game = new tetris.Game(); });
+	$(function() { game = new tetrjs.Game(); });
 
-	return tetris;
+	return tetrjs;
 }(jQuery));
