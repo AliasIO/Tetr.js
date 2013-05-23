@@ -72,12 +72,37 @@ header {
 	margin: -300px 0 0 -255px;
 	position: absolute;
 	top: 50%;
-	width: 511px;
+	width: 631px;
+}
+
+#playerbar {
+    	background: #203;
+	height: 600px;
+	position: absolute;
+	width: 120px;
+}
+
+#localplayer {
+	border-color: #405;
+	border-style: solid;
+	border-width: 1px 0;
+	font-size: 16px;
+	line-height: 1em;
+}
+
+#playerlist {
+	border-color: #405;
+	border-style: solid;
+	border-width: 1px 0;
+	font-size: 16px;
+	line-height: 1em;
 }
 
 #main {
 	background: #102;
+    	border-left: 1px solid #405;
 	height: 600px;
+    	left: 121px;
 	position: absolute;
 	width: 300px;
 }
@@ -86,7 +111,7 @@ header {
 	background: #203;
 	border-left: 1px solid #405;
 	height: 600px;
-	left: 300px;
+	left: 420px;
 	position: absolute;
 	width: 210px;
 }
@@ -134,6 +159,15 @@ header {
 	padding-top: 15px;
 	position: absolute;
 	width: 210px;
+}
+
+.playerindicator {
+	background: #001;
+	margin: 15px;
+	overflow: hidden;
+	position: relative;
+	height: 40px;
+	width: 90px;
 }
 
 .block {

@@ -1,4 +1,5 @@
 /*jslint browser: true, devel: true, plusplus: true, white: true */
+/* global jQuery:false */
 var tetrjs, game;
 
 tetrjs = (function($) {
@@ -31,6 +32,8 @@ tetrjs = (function($) {
 		/** @member */
 		this.linesCleared = 0;
 
+		this.master = true;
+
 		/** @member */
 		this.gameOver = false;
 
@@ -52,51 +55,14 @@ tetrjs = (function($) {
 			queue: new tetrjs.Field(this, 'queue', 100, 4)
 			};
 
-		/** @member */
-		this.interval = setInterval(function() { self.progress.call(self); }, this.delay);
+		//Call start div
+		this.startPaused();
 
-		$.each(new Array(6), function() { self.queueAdd(); });
-
-		this.next();
-
+		//If master set else on('set')
 		$(document).keydown(function(e) {
-			if ( self.gameOver ) {
-				return;
-			}
-
-			switch ( e.keyCode ) {
-				case 32: // Space
-					self.tetromino.drop();
-
-					break;
-				case 37: // Left
-				case 65: // a
-					self.tetromino.move(-1, 0);
-
-					break;
-				case 13: // Enter
-				case 38: // Up
-				case 67: // w
-					self.tetromino.rotate();
-
-					break;
-				case 39: // Right
-				case 68: // d
-					self.tetromino.move(1, 0);
-
-					break;
-				case 40: // Down
-				case 83: // s
-					self.tetromino.move(0, 1);
-
-					break;
-				default:
-					return;
-			}
-
+			window.tetriscide.gameState.sendKeyPress(e.keyCode);
+			self.keyPress(e.keyCode);
 			e.preventDefault();
-
-			self.tetromino.place().render();
 		});
 
 		return this;
@@ -107,10 +73,65 @@ tetrjs = (function($) {
 	 *
 	 * @return {Game}
 	 */
-	tetrjs.Game.prototype.progress = function() {
-		this.tetromino.move(0, 1).place().render();
 
+	tetrjs.Game.prototype.keyPress = function (keyCode) {
+		var self = this;
+		if ( self.gameOver ) {
+			return;
+		} else if ( self.newgame ) {
+			if ( keyCode != 32 ) return;
+			return self.startGame();
+		}
+		switch ( keyCode ) {
+			case 32: // Space
+				self.tetromino.drop();
+
+				break;
+			case 37: // Left
+			case 65: // a
+				self.tetromino.move(-1, 0);
+
+				break;
+			case 13: // Enter
+			case 38: // Up
+			case 67: // w
+				self.tetromino.rotate();
+
+				break;
+			case 39: // Right
+			case 68: // d
+				self.tetromino.move(1, 0);
+
+				break;
+			case 40: // Down
+			case 83: // s
+				self.tetromino.move(0, 1);
+
+				break;
+			default:
+				return;
+		}
+
+
+		self.tetromino.place().render();
+	};
+
+	tetrjs.Game.prototype.progress = function() {
+
+		this.tetromino.move(0, 1).place().render();
+		//If master set
 		return this;
+	};
+
+	tetrjs.Game.prototype.startGame = function () {
+		if (!this.setup) return;
+		var self = this;
+		$('#start').hide();
+		/** @member */
+		// set interval on control
+		this.next();
+		this.setMaster();
+		this.newgame = false;
 	};
 
 	/**
@@ -143,6 +164,22 @@ tetrjs = (function($) {
 		return this;
 	};
 
+	tetrjs.Game.prototype.setSlave = function() {
+		var self = this;
+		self.master = false;
+		if (this.interval) clearInterval(this.interval);
+		//set all event listeners
+		//on this user is master set master
+	};
+
+	tetrjs.Game.prototype.setMaster = function () {
+		var self = this;
+		//sync state
+		self.master = true;
+		this.interval = setInterval(function() { self.progress.call(self); }, this.delay);
+		//set mouse listener only
+	};
+
 	/**
 	 * Add thousands separator to number
 	 *
@@ -159,7 +196,7 @@ tetrjs = (function($) {
 		}
 
 		return n;
-	}
+	};
 
 	/**
 	 * Get the next tetromino in the queue
@@ -168,7 +205,7 @@ tetrjs = (function($) {
 	 */
 	tetrjs.Game.prototype.next = function() {
 		var size;
-
+		if (this.queue.length === 0) return;
 		if ( this.gameOver ) {
 			return;
 		}
@@ -190,6 +227,11 @@ tetrjs = (function($) {
 		});
 
 		this.tetromino.place().render();
+		//Remove from queue
+		if (this.tetromino.qId) {
+			var GoBlock = new window.tetriscide.Block(this.tetromino.qId);
+			GoBlock.unregister();
+		}
 
 		return this.queueAdd();
 	};
@@ -199,12 +241,12 @@ tetrjs = (function($) {
 	 *
 	 * @return {Game}
 	 */
-	tetrjs.Game.prototype.queueAdd = function() {
+	tetrjs.Game.prototype.queueAdd = function(oldTetromino, doNotRegister) {
 		var
-			tetromino = new tetrjs.tetromino(this.field.queue),
+			tetromino = oldTetromino || new tetrjs.tetromino(this.field.queue),
 			offset    = 0
 			;
-
+		console.log(tetromino);
 		// Append to the queue
 		$.each(this.queue, function() {
 			offset += this.size().x + 1;
@@ -213,6 +255,10 @@ tetrjs = (function($) {
 		tetromino.move(offset, 0).place().render();
 
 		this.queue.push(tetromino);
+		if (!doNotRegister) {
+			var GoBlock = new window.tetriscide.Block(tetromino.shape);
+			GoBlock.register();
+		}
 
 		return this;
 	};
@@ -232,6 +278,53 @@ tetrjs = (function($) {
 		return this;
 	};
 
+	tetrjs.Game.prototype.startPaused = function() {
+		var self = this;
+		$('#start').show();
+		this.newgame = true;
+		self.setupInterval = setInterval(function () {
+			if (self.setupInterval) clearInterval(self.setupInterval);
+			if (!window.tetriscide) return;
+			self.setupListener();
+		},10);
+		return this;
+	};
+
+	tetrjs.Game.prototype.setupListener = function () {
+		var self = this;
+		if (self.setup) return;
+		/*if(window.tetriscide.gameState.queue.length === 0) {
+			$.each(new Array(6), function() { self.queueAdd(); });
+		} else {
+			window.tetriscide.gameState.queue.forEach(function(shape) {
+				var tetromino = tetrjs.tetrominoFromShape(self.game.field, shape);
+				self.queueAdd(tetromino);
+			});
+		}*/
+		window.tetriscide.queue.get(function(resp){
+			if (resp.value === null) return $.each(new Array(6), function() { self.queueAdd(); });
+				var storedQueue = resp.value;
+				for (var key in storedQueue) {
+					if (storedQueue.hasOwnProperty(key)) {
+						var tetromino = new tetrjs.tetromino(self.field.queue, null, storedQueue[key]);
+						self.queueAdd(tetromino, true);
+					}
+				}
+		});
+
+    //set Queue Listener
+    tetriscide.queue.on('set', function(resp){
+      tetriscide.gameState.queue.push(resp.value.item);
+    });
+
+    window.tetriscide.gameState.handleKeyPress(function(keypress) {
+			if (keypress.from !== window.tetriscide.me.id) self.keyPress(keypress.key);
+			console.log(keypress.from, keypress.key);
+    });
+
+		this.setup = true;
+	};
+
 	/**
 	 * Create a new tetromino
 	 *
@@ -239,7 +332,7 @@ tetrjs = (function($) {
 	 * @param {Field} field
 	 * @param {Block} [block]
 	 */
-	tetrjs.tetromino = function(field, block) {
+	tetrjs.tetromino = function(field, block, storedShape) {
 		var
 			self = this,
 			x    = 0,
@@ -258,10 +351,15 @@ tetrjs = (function($) {
 		if ( block ) {
 			this.blocks = [ block ];
 		} else {
-			this.blocks = [];
-
+			this.blocks = []; 
 			// Generate a random tetromino
-			this.shape = this.game.shapes[Math.ceil(Math.random() * this.game.shapes.length - 1)];
+			if (storedShape) {
+				console.log("Old T", storedShape);
+				this.qId = storedShape.id;
+				this.shape = storedShape.item || this.game.shapes[Math.ceil(Math.random() * this.game.shapes.length - 1)];
+			} else {
+				this.shape = this.game.shapes[Math.ceil(Math.random() * this.game.shapes.length - 1)];
+			}
 
 			this.blocks.push(new tetrjs.Block(this, x, y));
 
@@ -297,6 +395,7 @@ tetrjs = (function($) {
 	 * @return {tetromino}
 	 */
 	tetrjs.tetromino.prototype.move = function(x, y) {
+		// if master set
 		$.each(this.blocks, function() {
 			this.move(x, y);
 		});

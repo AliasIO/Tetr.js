@@ -14,6 +14,30 @@
 		<script src="js/jquery-1.9.1.min.js"></script>
 		<script src="js/jquery.easing.min.js"></script>
 		<script src="js/tetr.js"></script>
+    <script src="http://api.goinstant.net/build/platform.min.js"></script>
+    <script src="js/goplat.js"></script>
+    <script>
+        function populatePlayers()
+        {
+            var div
+            //remove all playerindicator divs
+            var node = document.getElementById("playerlist");
+            while (node.hasChildNodes()) {
+                node.removeChild(node.lastChild);
+            }
+            
+            //populate playerlist
+            _.forEach(window.tetriscide.gameState.players, function(player) {
+                      console.log(player.id);
+                      console.log(player.name);
+                      div = document.createElement('div');
+                      div.innerHTML = player.name;
+                      div.id = player.id;
+                      div.className = 'playerindicator';
+                      document.getElementById("playerlist").appendChild(div);
+            });
+        }
+    </script>
 	</head>
 	<body>
 		<header>
@@ -23,6 +47,16 @@
 		</header>
 
 		<div id="container">
+            		<div id="playerbar">
+                        <button type="button" onclick="populatePlayers()">Display</button>
+            			<div id="localplayer">
+            				<div id="player1" class="playerindicator">
+            				</div>
+            			</div>
+            			<div id="playerlist">
+            			</div>
+            		</div>
+            		
 			<div id="main"></div>
 			<div id="sidebar">
 				<div id="queue"></div>
@@ -65,7 +99,7 @@
 				</h2>
 
 				<p>
-					Press any key to start
+					Press space key to start
 				</p>
 			</div>
 
@@ -95,6 +129,6 @@
 			<p>Try <a href="http://readable.cc">Readable.cc RSS Reader</a></p>
 		</footer>
 
-		<a id="github" href="https://github.com/ElbertF/Tetr.js"></a>
+		<a id="github" href="https://github.com/leighmartell/Tetr.js"></a>
 	</body>
 </html>
