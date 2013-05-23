@@ -76,7 +76,7 @@ header {
 }
 
 #playerbar {
-    background: #203;
+    	background: #203;
 	height: 600px;
 	position: absolute;
 	width: 120px;
@@ -88,16 +88,6 @@ header {
 	border-width: 1px 0;
 	font-size: 16px;
 	line-height: 1em;
-	padding-top: 15px;
-	height: 60;
-}
-
-#playerindicators {
-	background: #001;
-	margin: 15px;
-	overflow: hidden;
-	position: relative;
-	width: 90px;
 }
 
 #playerlist {
@@ -106,7 +96,6 @@ header {
 	border-width: 1px 0;
 	font-size: 16px;
 	line-height: 1em;
-	padding-top: 15px;
 }
 
 #main {
@@ -170,6 +159,15 @@ header {
 	padding-top: 15px;
 	position: absolute;
 	width: 210px;
+}
+
+.playerindicators {
+	background: #001;
+	margin: 15px;
+	overflow: hidden;
+	position: relative;
+	height: 40px;
+	width: 90px;
 }
 
 .playerindicator {
