@@ -5,7 +5,6 @@ window.tetriscide = window.tetriscide || {};
   var DATA_ROOT = "/tetriscide22/";
   var GS_PLAYERS_KEY = DATA_ROOT + "players";
   var GS_MASTER_KEY = 'master';
-  var STATUS = DATA_ROOT + "status";
   var KEYPRESS = DATA_ROOT + "keypress";
 
   // global player object representing me me me.
@@ -85,15 +84,6 @@ window.tetriscide = window.tetriscide || {};
 
     players.get(function(resp) {
       tetriscide.gameState.players = resp.value;
-    });
-
-    tetriscide.gameState.status = {};
-    tetriscide.status = go.key(STATUS);
-    tetriscide.status.get(function (data) {
-      if (data === undefined) {
-        tetriscide.status.set({ newgame: true });
-      }
-      tetriscide.gameState.status = data;
     });
 
   }

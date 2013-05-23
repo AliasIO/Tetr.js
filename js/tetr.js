@@ -137,7 +137,6 @@ tetrjs = (function($) {
 		// set interval on control
 		this.setMaster();
 		this.newgame = false;
-		window.tetriscide.status.set({ newgame: this.newgame });
 	};
 
 	/**
@@ -290,11 +289,6 @@ tetrjs = (function($) {
 	tetrjs.Game.prototype.setupListener = function () {
 		var self = this;
 		if (self.setup) return;
-
-		//window.tetriscide.status.on('set', function(data) {
-		//	if (!data.newgame && self.newgame) self.startGame();
-		//	console.log('Event Received');
-		//});
 
 		window.tetriscide.keyPress.on('set', function(data) {
 			var value = data.value;
