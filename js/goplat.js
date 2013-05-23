@@ -2,9 +2,9 @@
 window.tetriscide = window.tetriscide || {};
 
 (function() {
-  var DATA_ROOT = "/tetriscide22/";
+  var DATA_ROOT = "/tetriscide/";
   var GS_PLAYERS_KEY = DATA_ROOT + "players";
-  var GS_MASTER_KEY = 'master';
+  var GS_MASTER_KEY = DATA_ROOT + 'master';
   var KEYPRESS = DATA_ROOT + "keypress";
 
   // global player object representing me me me.
@@ -64,7 +64,6 @@ window.tetriscide = window.tetriscide || {};
     // Update the game state whenever the players list changes. This will
     // be triggered when I come into the game.
     var players = go.key(GS_PLAYERS_KEY);
-    players.remove();
 
     players.on('set', function(resp) {
       tetriscide.gameState.players = resp.value;
