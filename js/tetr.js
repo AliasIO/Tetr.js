@@ -31,6 +31,8 @@ tetrjs = (function($) {
 		/** @member */
 		this.linesCleared = 0;
 
+		this.master = true;
+
 		/** @member */
 		this.gameOver = false;
 
@@ -61,7 +63,7 @@ tetrjs = (function($) {
 
 		//If master set else on('set')
 		$(document).keydown(function(e) {
-			if ( self.gameOver ) {
+			if ( self.gameOver || !self.master ) {
 				return;
 			} else if ( self.newgame ) {
 				if ( e.keyCode != 32 ) return;
@@ -123,7 +125,7 @@ tetrjs = (function($) {
 		$('#start').hide();
 		/** @member */
 		// set interval on control
-		this.interval = setInterval(function() { self.progress.call(self); }, this.delay);
+		this.setMaster();
 		this.newgame = false;
 	};
 
@@ -155,6 +157,22 @@ tetrjs = (function($) {
 		}
 
 		return this;
+	};
+
+	tetrjs.Game.prototype.setSlave = function() {
+		var self = this;
+		self.master = false;
+		if (this.interval) clearInterval(this.interval);
+		//set all event listeners
+		//on this user is master set master
+	};
+
+	tetrjs.Game.prototype.setMaster = function () {
+		var self = this;
+		//sync state
+		self.master = true;
+		this.interval = setInterval(function() { self.progress.call(self); }, this.delay);
+		//set mouse listener only
 	};
 
 	/**
@@ -319,6 +337,7 @@ tetrjs = (function($) {
 	 * @return {tetromino}
 	 */
 	tetrjs.tetromino.prototype.move = function(x, y) {
+		// if master set
 		$.each(this.blocks, function() {
 			this.move(x, y);
 		});
