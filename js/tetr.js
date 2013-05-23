@@ -1,4 +1,5 @@
 /*jslint browser: true, devel: true, plusplus: true, white: true */
+/* global jQuery:false */
 var tetrjs, game;
 
 tetrjs = (function($) {
@@ -31,6 +32,8 @@ tetrjs = (function($) {
 		/** @member */
 		this.linesCleared = 0;
 
+		this.master = true;
+
 		/** @member */
 		this.gameOver = false;
 
@@ -52,51 +55,18 @@ tetrjs = (function($) {
 			queue: new tetrjs.Field(this, 'queue', 100, 4)
 			};
 
-		/** @member */
-		this.interval = setInterval(function() { self.progress.call(self); }, this.delay);
-
 		$.each(new Array(6), function() { self.queueAdd(); });
 
 		this.next();
 
+		//Call start div
+		this.startPaused();
+
+		//If master set else on('set')
 		$(document).keydown(function(e) {
-			if ( self.gameOver ) {
-				return;
-			}
-
-			switch ( e.keyCode ) {
-				case 32: // Space
-					self.tetromino.drop();
-
-					break;
-				case 37: // Left
-				case 65: // a
-					self.tetromino.move(-1, 0);
-
-					break;
-				case 13: // Enter
-				case 38: // Up
-				case 67: // w
-					self.tetromino.rotate();
-
-					break;
-				case 39: // Right
-				case 68: // d
-					self.tetromino.move(1, 0);
-
-					break;
-				case 40: // Down
-				case 83: // s
-					self.tetromino.move(0, 1);
-
-					break;
-				default:
-					return;
-			}
-
+			window.tetriscide.gameState.sendKeyPress(e.keyCode);
+			self.keyPress(e.keyCode);
 			e.preventDefault();
-
-			self.tetromino.place().render();
 		});
 
 		return this;
@@ -107,10 +77,64 @@ tetrjs = (function($) {
 	 *
 	 * @return {Game}
 	 */
-	tetrjs.Game.prototype.progress = function() {
-		this.tetromino.move(0, 1).place().render();
 
+	tetrjs.Game.prototype.keyPress = function (keyCode) {
+		var self = this;
+		if ( self.gameOver ) {
+			return;
+		} else if ( self.newgame ) {
+			if ( keyCode != 32 ) return;
+			return self.startGame();
+		}
+		switch ( keyCode ) {
+			case 32: // Space
+				self.tetromino.drop();
+
+				break;
+			case 37: // Left
+			case 65: // a
+				self.tetromino.move(-1, 0);
+
+				break;
+			case 13: // Enter
+			case 38: // Up
+			case 67: // w
+				self.tetromino.rotate();
+
+				break;
+			case 39: // Right
+			case 68: // d
+				self.tetromino.move(1, 0);
+
+				break;
+			case 40: // Down
+			case 83: // s
+				self.tetromino.move(0, 1);
+
+				break;
+			default:
+				return;
+		}
+
+
+		self.tetromino.place().render();
+	};
+
+	tetrjs.Game.prototype.progress = function() {
+
+		this.tetromino.move(0, 1).place().render();
+		//If master set
 		return this;
+	};
+
+	tetrjs.Game.prototype.startGame = function () {
+		if (!this.setup) return;
+		var self = this;
+		$('#start').hide();
+		/** @member */
+		// set interval on control
+		this.setMaster();
+		this.newgame = false;
 	};
 
 	/**
@@ -143,6 +167,22 @@ tetrjs = (function($) {
 		return this;
 	};
 
+	tetrjs.Game.prototype.setSlave = function() {
+		var self = this;
+		self.master = false;
+		if (this.interval) clearInterval(this.interval);
+		//set all event listeners
+		//on this user is master set master
+	};
+
+	tetrjs.Game.prototype.setMaster = function () {
+		var self = this;
+		//sync state
+		self.master = true;
+		this.interval = setInterval(function() { self.progress.call(self); }, this.delay);
+		//set mouse listener only
+	};
+
 	/**
 	 * Add thousands separator to number
 	 *
@@ -159,7 +199,7 @@ tetrjs = (function($) {
 		}
 
 		return n;
-	}
+	};
 
 	/**
 	 * Get the next tetromino in the queue
@@ -232,6 +272,30 @@ tetrjs = (function($) {
 		return this;
 	};
 
+	tetrjs.Game.prototype.startPaused = function() {
+		var self = this;
+		$('#start').show();
+		this.newgame = true;
+		self.setupInterval = setInterval(function () {
+			if (self.setupInterval) clearInterval(self.setupInterval);
+			if (!window.tetriscide) return;
+			self.setupListener();
+		},10);
+		return this;
+	};
+
+	tetrjs.Game.prototype.setupListener = function () {
+		var self = this;
+		if (self.setup) return;
+
+    window.tetriscide.gameState.handleKeyPress(function(keypress) {
+			if (keypress.from !== window.tetriscide.me.id) self.keyPress(keypress.key);
+			console.log(keypress.from, keypress.key);
+    });
+
+		this.setup = true;
+	};
+
 	/**
 	 * Create a new tetromino
 	 *
@@ -297,6 +361,7 @@ tetrjs = (function($) {
 	 * @return {tetromino}
 	 */
 	tetrjs.tetromino.prototype.move = function(x, y) {
+		// if master set
 		$.each(this.blocks, function() {
 			this.move(x, y);
 		});
