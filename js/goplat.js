@@ -2,10 +2,11 @@
 window.tetriscide = window.tetriscide || {};
 
 (function() {
-  var DATA_ROOT = "/tetriscide/";
+  var DATA_ROOT = "/tetriscide22/";
   var GS_PLAYERS_KEY = DATA_ROOT + "players";
   var GS_MASTER_KEY = 'master';
   var STATUS = DATA_ROOT + "status";
+  var KEYPRESS = DATA_ROOT + "keypress";
 
   // global player object representing me me me.
   var go;
@@ -31,7 +32,7 @@ window.tetriscide = window.tetriscide || {};
   };
 
   Me.prototype.isMaster = function() {
-    return this.id == tetriscide.gamestate.master;
+    return this.id == tetriscide.gameState.master;
   };
 
   Me.prototype.unregister = function() {
@@ -58,6 +59,7 @@ window.tetriscide = window.tetriscide || {};
     tetriscide.gameState = {};
     tetriscide.gameState.players = {};
     tetriscide.gameState.master = null;
+    tetriscide.keyPress = go.key(KEYPRESS);
 
     // Create the players key if it does not exist.
     // Update the game state whenever the players list changes. This will
@@ -70,7 +72,7 @@ window.tetriscide = window.tetriscide || {};
     });
 
     tetriscide.me = new Me();
-    
+
     // Create the master key if it does not exist and update the game state
     // whenever the master changes.
     var master = go.key(GS_MASTER_KEY);

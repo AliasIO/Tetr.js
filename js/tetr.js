@@ -63,46 +63,12 @@ tetrjs = (function($) {
 
 		//If master set else on('set')
 		$(document).keydown(function(e) {
-			if ( self.gameOver || !self.master ) {
-				return;
-			} else if ( self.newgame ) {
-				if ( e.keyCode != 32 ) return;
-				return self.startGame();
-			}
-
-			switch ( e.keyCode ) {
-				case 32: // Space
-					self.tetromino.drop();
-
-					break;
-				case 37: // Left
-				case 65: // a
-					self.tetromino.move(-1, 0);
-
-					break;
-				case 13: // Enter
-				case 38: // Up
-				case 67: // w
-					self.tetromino.rotate();
-
-					break;
-				case 39: // Right
-				case 68: // d
-					self.tetromino.move(1, 0);
-
-					break;
-				case 40: // Down
-				case 83: // s
-					self.tetromino.move(0, 1);
-
-					break;
-				default:
-					return;
-			}
-
+			window.tetriscide.keyPress.set({
+				from: window.tetriscide.me.id,
+				key: e.keyCode
+			});
+			self.keyPress(e.keyCode);
 			e.preventDefault();
-
-			self.tetromino.place().render();
 		});
 
 		return this;
@@ -113,6 +79,49 @@ tetrjs = (function($) {
 	 *
 	 * @return {Game}
 	 */
+
+	tetrjs.Game.prototype.keyPress = function (keyCode) {
+		var self = this;
+		if ( self.gameOver ) {
+			return;
+		} else if ( self.newgame ) {
+			if ( keyCode != 32 ) return;
+			return self.startGame();
+		}
+		switch ( keyCode ) {
+			case 32: // Space
+				self.tetromino.drop();
+
+				break;
+			case 37: // Left
+			case 65: // a
+				self.tetromino.move(-1, 0);
+
+				break;
+			case 13: // Enter
+			case 38: // Up
+			case 67: // w
+				self.tetromino.rotate();
+
+				break;
+			case 39: // Right
+			case 68: // d
+				self.tetromino.move(1, 0);
+
+				break;
+			case 40: // Down
+			case 83: // s
+				self.tetromino.move(0, 1);
+
+				break;
+			default:
+				return;
+		}
+
+
+		self.tetromino.place().render();
+	};
+
 	tetrjs.Game.prototype.progress = function() {
 
 		this.tetromino.move(0, 1).place().render();
@@ -271,19 +280,28 @@ tetrjs = (function($) {
 		$('#start').show();
 		this.newgame = true;
 		self.setupInterval = setInterval(function () {
+			if (self.setupInterval) clearInterval(self.setupInterval);
 			if (!window.tetriscide) return;
-			clearInterval(self.setupInterval);
 			self.setupListener();
-		},2);
+		},10);
 		return this;
 	};
 
 	tetrjs.Game.prototype.setupListener = function () {
 		var self = this;
-		window.tetriscide.status.on('set', function(data) {
-			if (!data.newgame) self.startGame();
-			console.log('Event Received');
+		if (self.setup) return;
+
+		//window.tetriscide.status.on('set', function(data) {
+		//	if (!data.newgame && self.newgame) self.startGame();
+		//	console.log('Event Received');
+		//});
+
+		window.tetriscide.keyPress.on('set', function(data) {
+			var value = data.value;
+			if (value.from !== window.tetriscide.me.id) self.keyPress(value.key);
+			console.log(value.from, value.key);
 		});
+
 		this.setup = true;
 	};
 
