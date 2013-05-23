@@ -89,11 +89,11 @@ header {
 	font-size: 16px;
 	line-height: 1em;
 	padding-top: 15px;
+	height: 60;
 }
 
-#localplayerindicator {
+#playerindicators {
 	background: #001;
-	height: 60px;
 	margin: 15px;
 	overflow: hidden;
 	position: relative;
@@ -101,12 +101,12 @@ header {
 }
 
 #playerlist {
-	background: #001;
-	height: 60px;
-	margin: 15px;
-	overflow: hidden;
-	position: relative;
-	width: 90px;
+	border-color: #405;
+	border-style: solid;
+	border-width: 1px 0;
+	font-size: 16px;
+	line-height: 1em;
+	padding-top: 15px;
 }
 
 #main {
