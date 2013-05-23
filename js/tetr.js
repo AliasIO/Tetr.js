@@ -1,4 +1,5 @@
 /*jslint browser: true, devel: true, plusplus: true, white: true */
+/* global jQuery:false */
 var tetrjs, game;
 
 tetrjs = (function($) {
@@ -63,10 +64,7 @@ tetrjs = (function($) {
 
 		//If master set else on('set')
 		$(document).keydown(function(e) {
-			window.tetriscide.keyPress.set({
-				from: window.tetriscide.me.id,
-				key: e.keyCode
-			});
+			window.tetriscide.gameState.sendKeyPress(e.keyCode);
 			self.keyPress(e.keyCode);
 			e.preventDefault();
 		});
@@ -290,11 +288,10 @@ tetrjs = (function($) {
 		var self = this;
 		if (self.setup) return;
 
-		window.tetriscide.keyPress.on('set', function(data) {
-			var value = data.value;
-			if (value.from !== window.tetriscide.me.id) self.keyPress(value.key);
-			console.log(value.from, value.key);
-		});
+    window.tetriscide.gameState.handleKeyPress(function(keypress) {
+			if (keypress.from !== window.tetriscide.me.id) self.keyPress(keypress.key);
+			console.log(keypress.from, keypress.key);
+    });
 
 		this.setup = true;
 	};

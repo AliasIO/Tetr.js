@@ -9,6 +9,9 @@ window.tetriscide = window.tetriscide || {};
 
   // global player object representing me me me.
   var go;
+  var players;
+  var keypress;
+
 
   function Me() {
     // generate a random value here to represent me. This is
@@ -58,7 +61,23 @@ window.tetriscide = window.tetriscide || {};
     tetriscide.gameState = {};
     tetriscide.gameState.players = {};
     tetriscide.gameState.master = null;
-    tetriscide.keyPress = go.key(KEYPRESS);
+    tetriscide.gameState.sendKeyPress = function(keyCode) {
+      console.log("Sending keypress:" + keyCode);
+      keypress.set({ from: tetriscide.me.id, key: keyCode });
+    };
+
+    var keypressCallbacks = [];
+		tetriscide.gameState.handleKeyPress = function(cb) {
+      keypressCallbacks.push(cb);
+    };
+
+    // initialize the keypress reference
+    keypress = go.key(KEYPRESS);
+    keypress.on('set', function(data) {
+      keypressCallbacks.forEach(function(cb) {
+        cb(data.value);
+      });
+		});
 
     // Create the players key if it does not exist.
     // Update the game state whenever the players list changes. This will
