@@ -2,7 +2,7 @@
 window.tetriscide = window.tetriscide || {};
 
 (function() {
-  var DATA_ROOT = "/tetriscide-bluemoon/";
+  var DATA_ROOT = "/tetriscide/";
   var GS_PLAYERS_KEY = DATA_ROOT + "players";
   var GS_MASTER_KEY = DATA_ROOT + 'master';
   var KEYPRESS = DATA_ROOT + "keypress";
@@ -84,6 +84,24 @@ window.tetriscide = window.tetriscide || {};
       tetriscide.gameState.master = masterId;
       master.set(tetriscide.gameState.master);
     };
+    tetriscide.gameState.setRandomMaster = function() {
+      var players = tetriscide.gameState.players;
+      var playersArray = [];
+      var numPlayers = 0;
+      for (var prop in players) {
+        if (players.hasOwnProperty(prop)) playersArray.push(players[prop]);
+      }
+
+      playersArray.sort(function(a, b) {
+        return a.id - b.id;
+      });
+
+      var randomIndex = Math.floor(Math.random() * playersArray.length);
+      var randomMaster = playersArray[randomIndex].id;
+
+      tetriscide.gameState.setMaster(randomMaster);
+    };
+
 
     tetriscide.gameState.sendKeyPress = function(keyCode) {
       console.log("Sending keypress:" + keyCode);
