@@ -64,7 +64,6 @@ window.tetriscide = window.tetriscide || {};
     // Update the game state whenever the players list changes. This will
     // be triggered when I come into the game.
     var players = go.key(GS_PLAYERS_KEY);
-    players.remove();
 
     players.on('set', function(resp) {
       tetriscide.gameState.players = resp.value;
