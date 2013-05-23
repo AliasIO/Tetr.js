@@ -31,6 +31,8 @@ tetrjs = (function($) {
 		/** @member */
 		this.linesCleared = 0;
 
+		this.master = true;
+
 		/** @member */
 		this.gameOver = false;
 
@@ -52,16 +54,20 @@ tetrjs = (function($) {
 			queue: new tetrjs.Field(this, 'queue', 100, 4)
 			};
 
-		/** @member */
-		this.interval = setInterval(function() { self.progress.call(self); }, this.delay);
-
 		$.each(new Array(6), function() { self.queueAdd(); });
 
 		this.next();
 
+		//Call start div
+		this.startPaused();
+
+		//If master set else on('set')
 		$(document).keydown(function(e) {
-			if ( self.gameOver ) {
+			if ( self.gameOver || !self.master ) {
 				return;
+			} else if ( self.newgame ) {
+				if ( e.keyCode != 32 ) return;
+				return self.startGame();
 			}
 
 			switch ( e.keyCode ) {
@@ -108,9 +114,19 @@ tetrjs = (function($) {
 	 * @return {Game}
 	 */
 	tetrjs.Game.prototype.progress = function() {
-		this.tetromino.move(0, 1).place().render();
 
+		this.tetromino.move(0, 1).place().render();
+		//If master set
 		return this;
+	};
+
+	tetrjs.Game.prototype.startGame = function () {
+		var self = this;
+		$('#start').hide();
+		/** @member */
+		// set interval on control
+		this.setMaster();
+		this.newgame = false;
 	};
 
 	/**
@@ -143,6 +159,22 @@ tetrjs = (function($) {
 		return this;
 	};
 
+	tetrjs.Game.prototype.setSlave = function() {
+		var self = this;
+		self.master = false;
+		if (this.interval) clearInterval(this.interval);
+		//set all event listeners
+		//on this user is master set master
+	};
+
+	tetrjs.Game.prototype.setMaster = function () {
+		var self = this;
+		//sync state
+		self.master = true;
+		this.interval = setInterval(function() { self.progress.call(self); }, this.delay);
+		//set mouse listener only
+	};
+
 	/**
 	 * Add thousands separator to number
 	 *
@@ -159,7 +191,7 @@ tetrjs = (function($) {
 		}
 
 		return n;
-	}
+	};
 
 	/**
 	 * Get the next tetromino in the queue
@@ -232,6 +264,14 @@ tetrjs = (function($) {
 		return this;
 	};
 
+	tetrjs.Game.prototype.startPaused = function() {
+		$('#start').show();
+
+		this.newgame = true;
+
+		return this;
+	};
+
 	/**
 	 * Create a new tetromino
 	 *
@@ -297,6 +337,7 @@ tetrjs = (function($) {
 	 * @return {tetromino}
 	 */
 	tetrjs.tetromino.prototype.move = function(x, y) {
+		// if master set
 		$.each(this.blocks, function() {
 			this.move(x, y);
 		});
