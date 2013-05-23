@@ -2,7 +2,7 @@
 window.tetriscide = window.tetriscide || {};
 
 (function() {
-  var DATA_ROOT = "/tetriscide/";
+  var DATA_ROOT = "/tetriscide-gordie/";
   var GS_PLAYERS_KEY = DATA_ROOT + "players";
   var GS_MASTER_KEY = DATA_ROOT + 'master';
   var KEYPRESS = DATA_ROOT + "keypress";
@@ -10,6 +10,7 @@ window.tetriscide = window.tetriscide || {};
   // global player object representing me me me.
   var go;
   var players;
+  var master;
   var keypress;
 
 
@@ -30,7 +31,17 @@ window.tetriscide = window.tetriscide || {};
   Me.prototype._reference = null;
 
   Me.prototype._updateMe = function() {
-    this._reference.set({ id: this.id, name: this.name });
+    var updateObj = {};
+    updateObj[this.id] = { id: this.id, name: this.name };
+
+    tetriscide.gameState.players[this.id] = updateObj[this.id];
+
+    players.update(updateObj);
+
+    this._reference.get(function(resp) {
+      console.log("Added player:", JSON.stringify(resp.value));
+      console.log(tetriscide.gameState.players);
+    });
   };
 
   Me.prototype.isMaster = function() {
@@ -38,7 +49,14 @@ window.tetriscide = window.tetriscide || {};
   };
 
   Me.prototype.unregister = function() {
-    this._reference.remove();
+    var updateObj = {};
+    updateObj[this.id] = { id: 0, name: this.name };
+    players.update(updateObj);    // set the value to 0 to indicate a deletion
+    this._reference.remove();     // remove the reference
+
+    delete tetriscide.gameState.players[this.id];
+    console.log("Removed player " + this.id + "from player list");
+    console.log(JSON.stringify(tetriscide.gameState.players));
   };
 
   Me.prototype.setName = function(name) {
@@ -60,7 +78,13 @@ window.tetriscide = window.tetriscide || {};
     // initialize an empty gamestate.
     tetriscide.gameState = {};
     tetriscide.gameState.players = {};
+
     tetriscide.gameState.master = null;
+    tetriscide.gameState.setMaster = function(masterId) {
+      tetriscide.gameState.master = masterId;
+      master.set(tetriscide.gameState.master);
+    };
+
     tetriscide.gameState.sendKeyPress = function(keyCode) {
       console.log("Sending keypress:" + keyCode);
       keypress.set({ from: tetriscide.me.id, key: keyCode });
@@ -74,6 +98,7 @@ window.tetriscide = window.tetriscide || {};
     // initialize the keypress reference
     keypress = go.key(KEYPRESS);
     keypress.on('set', function(data) {
+      console.log("receiving keypress:" + JSON.stringify(data.value));
       keypressCallbacks.forEach(function(cb) {
         cb(data.value);
       });
@@ -82,9 +107,26 @@ window.tetriscide = window.tetriscide || {};
     // Create the players key if it does not exist.
     // Update the game state whenever the players list changes. This will
     // be triggered when I come into the game.
-    var players = go.key(GS_PLAYERS_KEY);
+    players = go.key(GS_PLAYERS_KEY);
 
-    players.on('set', function(resp) {
+    players.on('update', function(resp) {
+      console.log("Getting some players updating action: ", resp.value);
+      var updatedPlayers = resp.value;
+      for (var playerId in updatedPlayers) {
+        console.log(playerId, updatedPlayers[playerId]);
+        if (updatedPlayers[playerId].id === 0) {
+          console.log(JSON.stringify(tetriscide.gameState.players));
+          delete tetriscide.gameState.players[playerId];
+          console.log("Removing player " + playerId + " from player list");
+          console.log(JSON.stringify(tetriscide.gameState.players) + "\n");
+
+        } else {
+          tetriscide.gameState.players[playerId] = updatedPlayers[playerId];
+          console.log("Updating player " + playerId + " in player listi");
+          console.log(JSON.stringify(tetriscide.gameState.players));
+        }
+      }
+
       tetriscide.gameState.players = resp.value;
     });
 
@@ -92,13 +134,14 @@ window.tetriscide = window.tetriscide || {};
 
     // Create the master key if it does not exist and update the game state
     // whenever the master changes.
-    var master = go.key(GS_MASTER_KEY);
+    master = go.key(GS_MASTER_KEY);
     master.on('set', function(resp) {
+      console.log("Getting some master setting action: ", resp.value);
       tetriscide.gameState.master = resp.value;
     });
 
     // temporary setting of the master to the current player
-    master.set(tetriscide.me.id);
+    tetriscide.gameState.setMaster(tetriscide.me.id);
 
     players.get(function(resp) {
       tetriscide.gameState.players = resp.value;
