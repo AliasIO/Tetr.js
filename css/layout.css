@@ -172,6 +172,15 @@ header {
 	width: 210px;
 }
 
+.playerindicator {
+	border-color: #c9f;
+	border-style: solid;
+	border-width: 1px 0;
+	background: #000;
+	height: 20px;
+	width: 20px;
+}
+
 .block {
 	background: #222;
 	border: 1px solid;
