@@ -121,12 +121,14 @@ tetrjs = (function($) {
 	};
 
 	tetrjs.Game.prototype.startGame = function () {
+		if (!this.setup) return;
 		var self = this;
 		$('#start').hide();
 		/** @member */
 		// set interval on control
 		this.setMaster();
 		this.newgame = false;
+		window.tetriscide.status.set({ newgame: this.newgame });
 	};
 
 	/**
@@ -265,11 +267,24 @@ tetrjs = (function($) {
 	};
 
 	tetrjs.Game.prototype.startPaused = function() {
+		var self = this;
 		$('#start').show();
-
 		this.newgame = true;
-
+		self.setupInterval = setInterval(function () {
+			if (!window.tetriscide) return;
+			clearInterval(self.setupInterval);
+			self.setupListener();
+		},2);
 		return this;
+	};
+
+	tetrjs.Game.prototype.setupListener = function () {
+		var self = this;
+		window.tetriscide.status.on('set', function(data) {
+			if (!data.newgame) self.startGame();
+			console.log('Event Received');
+		});
+		this.setup = true;
 	};
 
 	/**
