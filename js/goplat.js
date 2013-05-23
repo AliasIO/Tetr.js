@@ -2,7 +2,7 @@
 window.tetriscide = window.tetriscide || {};
 
 (function() {
-  var DATA_ROOT = "/tetriscide-gordie/";
+  var DATA_ROOT = "/tetriscide-bluemoon/";
   var GS_PLAYERS_KEY = DATA_ROOT + "players";
   var GS_MASTER_KEY = DATA_ROOT + 'master';
   var KEYPRESS = DATA_ROOT + "keypress";
@@ -114,17 +114,20 @@ window.tetriscide = window.tetriscide || {};
       var updatedPlayers = resp.value;
       for (var playerId in updatedPlayers) {
         console.log(playerId, updatedPlayers[playerId]);
+        console.log("Players (before): " + JSON.stringify(tetriscide.gameState.players));
+
+        // if the id is 0 then it means that the player is being deleted.
         if (updatedPlayers[playerId].id === 0) {
-          console.log(JSON.stringify(tetriscide.gameState.players));
           delete tetriscide.gameState.players[playerId];
           console.log("Removing player " + playerId + " from player list");
-          console.log(JSON.stringify(tetriscide.gameState.players) + "\n");
 
+        // otherwise the player has been updated (or added).
         } else {
           tetriscide.gameState.players[playerId] = updatedPlayers[playerId];
-          console.log("Updating player " + playerId + " in player listi");
-          console.log(JSON.stringify(tetriscide.gameState.players));
+          console.log("Updating player " + playerId + " in player list");
         }
+
+        console.log("Players (after): " + JSON.stringify(tetriscide.gameState.players));
       }
 
       tetriscide.gameState.players = resp.value;
@@ -144,7 +147,16 @@ window.tetriscide = window.tetriscide || {};
     tetriscide.gameState.setMaster(tetriscide.me.id);
 
     players.get(function(resp) {
-      tetriscide.gameState.players = resp.value;
+      var players = resp.value;
+
+      tetriscide.gameState.players = {};
+      for (var playerId in players) {
+        var player = players[playerId];
+        if (player.id) {
+          tetriscide.gameState.players[playerId] = player;
+        }
+      }
+      console.log("Got players from server: " + JSON.stringify(tetriscide.gameState.players));
     });
 
   }
