@@ -284,6 +284,7 @@ tetrjs = (function($) {
 	tetrjs.Game.prototype.setupListener = function () {
 		var self = this;
 		if (self.setup) return;
+		if (window.tetriscide.queue === null) $.each(new Array(6), function() { self.queueAdd(); });
 
     window.tetriscide.gameState.handleKeyPress(function(keypress) {
 			if (keypress.from !== window.tetriscide.me.id) self.keyPress(keypress.key);
