@@ -111,9 +111,9 @@ header {
 
 #main {
 	background: #102;
-    border-left: 1px solid #405;
+    	border-left: 1px solid #405;
 	height: 600px;
-    left: 121px;
+    	left: 121px;
 	position: absolute;
 	width: 300px;
 }
@@ -176,8 +176,7 @@ header {
 	border-color: #c9f;
 	border-style: solid;
 	border-width: 1px 0;
-	background: #000;
-	margin: 5px;
+	background: #eee;
 	height: 20px;
 	width: 20px;
 }
