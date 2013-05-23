@@ -82,6 +82,25 @@ header {
 	width: 120px;
 }
 
+#localplayer {
+	background: #001;
+	height: 60px;
+	margin: 15px;
+	overflow: hidden;
+	position: relative;
+	width: 90px;
+}
+
+#playerlist {
+	background: #001;
+	height: 60px;
+	margin: 15px;
+	overflow-y: scroll;
+	overflow-x: hidden;
+	position: relative;
+	width: 90px;
+}
+
 #main {
 	background: #102;
     border-left: 1px solid #405;
