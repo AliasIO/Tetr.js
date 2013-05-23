@@ -177,6 +177,7 @@ header {
 	border-style: solid;
 	border-width: 1px 0;
 	background: #000;
+	margin: 5px;
 	height: 20px;
 	width: 20px;
 }
