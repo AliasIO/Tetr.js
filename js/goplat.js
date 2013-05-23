@@ -4,10 +4,9 @@ window.tetriscide = window.tetriscide || {};
 (function() {
   var DATA_ROOT = "/tetriscide/";
   var GS_PLAYERS_KEY = DATA_ROOT + "players";
-
+  var GS_MASTER_KEY = 'master';
 
   // global player object representing me me me.
-  var _me;
   var go;
 
   function Me() {
@@ -30,6 +29,10 @@ window.tetriscide = window.tetriscide || {};
     this._reference.set({ id: this.id, name: this.name });
   };
 
+  Me.prototype.isMaster = function() {
+    return this.id == tetriscide.gamestate.master;
+  };
+
   Me.prototype.unregister = function() {
     this._reference.remove();
   };
@@ -50,19 +53,32 @@ window.tetriscide = window.tetriscide || {};
     // create a connection to the platform.
     go = new goinstant.Platform();
 
+    // initialize an empty gamestate.
     tetriscide.gameState = {};
     tetriscide.gameState.players = {};
+    tetriscide.gameState.master = null;
 
-    // create the players key if it does not exist.
-    var players = go.key(GS_PLAYERS_KEY);
-  
-    // update the game state whenever the players list changes. This will
+    // Create the players key if it does not exist.
+    // Update the game state whenever the players list changes. This will
     // be triggered when I come into the game.
+    var players = go.key(GS_PLAYERS_KEY);
+    players.remove();
+
     players.on('set', function(resp) {
       tetriscide.gameState.players = resp.value;
     });
 
     tetriscide.me = new Me();
+    
+    // Create the master key if it does not exist and update the game state
+    // whenever the master changes.
+    var master = go.key(GS_MASTER_KEY);
+    master.on('set', function(resp) {
+      tetriscide.gameState.master = resp.value;
+    });
+
+    // temporary setting of the master to the current player
+    master.set(tetriscide.me.id);
   }
 
   // initialize all the things after the body is loaded.
