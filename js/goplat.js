@@ -79,6 +79,11 @@ window.tetriscide = window.tetriscide || {};
 
     // temporary setting of the master to the current player
     master.set(tetriscide.me.id);
+
+    players.get(function(resp) {
+      tetriscide.gameState.players = resp.value;
+    });
+
   }
 
   // initialize all the things after the body is loaded.
